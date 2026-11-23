@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+/*
+ * Token values are the source of truth from
+ * [DESIGN_SYSTEM.md](../docs/DESIGN_SYSTEM.md) §8. Components consume these through the
+ * Tailwind theme mapping below; a raw hex value inside a component is a review-blocking
+ * defect (§8). Dark mode is deliberately absent: it is deferred in MVP (§3.5, `OQ-DS1`).
+ *
+ * Deliberate departures from §8, toward a more editorial, education-facing treatment:
+ * structure is a 1 px warm hairline (`--line`, or `--line-strong` for interactive edges)
+ * rather than a 2 px ink rule, elevation is soft neutral shadow rather than a hard offset,
+ * and text stays on `--ink`.
+ */
+
+:root {
+  --paper: #fbf7f0;
+  --paper-raised: #ffffff;
+  --paper-sunk: #f4ede0;
+  --paper-accent: #f1e4cc;
+
+  --ink: #141210;
+  --ink-2: #4a423a;
+  --ink-3: #6b6257;
+  --line: #e4dacb;
+  --line-strong: #c9bcaa;
+  --line-soft: #ece3d6;
+  --shadow-color: #e8dfd1;
+
+  --cobalt: #2b4eff;
+  --sunbeam: #ffc53d;
+  --leaf: #2f7a4f;
+  --mint: #b7e4c7;
+  --coral: #e23a2b;
+  --coral-ink: #a81e14;
+  --lilac: #c9b8ff;
+  --sky: #a9dcf0;
+  --blush: #ffc2d4;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
+  --shadow-md: 0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+  --shadow-lg: 0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
+
+  --border-base: 1px;
+  --border-bold: 3px;
+
+  /*
+   * Subject identity (DESIGN_SYSTEM.md §3.3). Components never name a subject colour:
+   * they set --subject-ink / --subject-fill on a wrapper from the subject's color_token
+   * and style against those. --subject-*-fill is the documented 14% tint over paper.
+   */
+  --subject-cobalt: #2b4eff;
+  --subject-lilac: #7c5cff;
+  --subject-leaf: #2f7a4f;
+  --subject-lime: #6f9e1f;
+  --subject-blush: #c9426a;
+  --subject-amber: #b4651a;
+  --subject-sky: #1f7a9c;
+  --subject-plum: #6d28d9;
+  --subject-sunbeam: #8a6000;
+  --subject-mauve: #8b3fa8;
+
+  --subject-cobalt-fill: color-mix(in srgb, var(--subject-cobalt) 14%, var(--paper));
+  --subject-lilac-fill: color-mix(in srgb, var(--subject-lilac) 14%, var(--paper));
+  --subject-leaf-fill: color-mix(in srgb, var(--subject-leaf) 14%, var(--paper));
+  --subject-lime-fill: color-mix(in srgb, var(--subject-lime) 14%, var(--paper));
+  --subject-blush-fill: color-mix(in srgb, var(--subject-blush) 14%, var(--paper));
+  --subject-amber-fill: color-mix(in srgb, var(--subject-amber) 14%, var(--paper));
+  --subject-sky-fill: color-mix(in srgb, var(--subject-sky) 14%, var(--paper));
+  --subject-plum-fill: color-mix(in srgb, var(--subject-plum) 14%, var(--paper));
+  --subject-sunbeam-fill: color-mix(in srgb, var(--subject-sunbeam) 14%, var(--paper));
+  --subject-mauve-fill: color-mix(in srgb, var(--subject-mauve) 14%, var(--paper));
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-paper-accent: var(--paper-accent);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-soft: var(--line-soft);
+
+  --color-cobalt: var(--cobalt);
+  --color-sunbeam: var(--sunbeam);
+  --color-leaf: var(--leaf);
+  --color-mint: var(--mint);
+  --color-coral: var(--coral);
+  --color-coral-ink: var(--coral-ink);
+  --color-lilac: var(--lilac);
+  --color-sky: var(--sky);
+  --color-blush: var(--blush);
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
+  --shadow-md: 0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+  --shadow-lg: 0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
+
+  /* Set per subject on a wrapper; see :root above. */
+  --color-subject-ink: var(--subject-ink, var(--subject-cobalt));
+  --color-subject-fill: var(--subject-fill, var(--subject-cobalt-fill));
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: var(--font-instrument), ui-serif, georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.375rem;
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.02;
+  --text-5xl: 4rem;
+  --text-5xl--line-height: 0.98;
+}
+
+@layer base {
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+
+  /* Focus is always visible (DESIGN_SYSTEM.md §3.4, §10): 3 px cobalt, 2 px offset. */
+  :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--cobalt);
+    outline-offset: 2px;
+  }
+}
+
+/* DESIGN_SYSTEM.md §7: reduced motion removes transforms, state changes stay instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * DESIGN_SYSTEM.md §7 — the tactile press.
+ *
+ * Every interactive surface shares one lift: -1 px on hover, +2 px on press, on the
+ * documented 120 ms micro duration and easing (§5 interaction convention). It lives inside
+ * `no-preference` so the transform is never applied for a reader who asked for less motion
+ * (DS-05); colour, border and shadow still change, so the state is never hidden.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .lift {
+    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-duration: 120ms;
+    transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
+  }
+
+  .lift:hover {
+    transform: translate(-1px, -1px);
+  }
+
+  .lift:active {
+    transform: translate(2px, 2px);
+  }
+}
+
+/*
+ * Mobile menu entrance (DESIGN_SYSTEM.md §7 toast timing: 180 ms in). CSS rather than
+ * Motion because the header menu is a native `<details>`: it must keep working with no
+ * JavaScript. Only the opening animates — a closed `<details>` removes its content, so
+ * there is nothing to exit. Reduced motion skips the keyframes entirely.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .motion-menu-panel {
+    animation: menu-panel-in 180ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+    transform-origin: top right;
+  }
+
+  @keyframes menu-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
