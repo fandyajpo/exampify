@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Normative — §4.2, §5.1, §5.5, §5.4, §7 and §9.7/§9.9 describe the shipped layout system |
-| Changelog | 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
+| Changelog | 1.2 — reconciles §2, §3.1, §5.3, §5.4, §8, §9 and §11 with `globals.css`: 1 px warm hairlines and soft neutral elevation replace 2 px ink borders and hard-offset shadows, and the unused `--border-base` / `--border-bold` tokens are removed. 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
 | Supersedes | Version 0.1 (materials/tutorials vocabulary, no format or search components) |
 | Depends on | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) (§3 design direction) |
 | Referenced by | [UI_UX_GUIDELINES.md](./UI_UX_GUIDELINES.md), [MVP_ROADMAP.md](./MVP_ROADMAP.md) |
@@ -13,7 +13,7 @@
 
 ## 1. Purpose and scope
 
-A concrete, implementable design system for **soft neo-brutalism**: warm paper surfaces, heavy ink borders, confident editorial type, offset shadows and colourful subject identities — softened with generous whitespace, controlled radii and a restrained accent palette so it reads as an art-directed education product rather than a novelty poster.
+A concrete, implementable design system for **soft neo-brutalism**: warm paper surfaces, hairline structure, confident editorial type, soft neutral elevation and colourful subject identities — balanced with generous whitespace, controlled radii and a restrained accent palette so it reads as an art-directed education product rather than a novelty poster.
 
 **In scope:** foundations (colour, type, spacing, radius, border, shadow, iconography, illustrations, motion), token names and values, component inventory with anatomy and variants, accessibility constraints, and implementation guidance (CSS variables + Tailwind theme mapping).
 
@@ -27,11 +27,11 @@ A concrete, implementable design system for **soft neo-brutalism**: warm paper s
 
 | Principle | What it means in practice | Anti-pattern it prevents |
 |---|---|---|
-| **Paper, not glass** | Warm off-white surfaces; shadows are hard offsets, never blurred glows | Frosted-glass cards, gradient meshes |
-| **Ink outlines** | 2 px ink borders define interactive and important surfaces; 1 px soft lines for dense tables | Borderless floating cards that lose hierarchy |
+| **Paper, not glass** | Warm off-white surfaces; elevation is a soft neutral shadow, never a coloured glow | Frosted-glass cards, gradient meshes, hard offset shadows |
+| **Ink outlines** | 1 px warm hairlines define structure; the darker `--line-strong` hairline marks interactive edges | Borderless floating cards that lose hierarchy |
 | **Editorial hierarchy** | One display heading per viewport; body text sized for reading (17–18 px) with 1.6 line height | Uniform 14 px text everywhere |
 | **Colour is a label, not decoration** | Each subject owns one token; callouts use five semantic kinds; nothing is coloured "because it looks nice" | Rainbow gradients, coloured text on coloured fills |
-| **Soft brutalism** | Thick borders and hard shadows, but 10–16 px radii, real whitespace, and no clipped or rotated elements | Random stickers, tape, torn paper, rotations |
+| **Soft brutalism** | Hairline structure and soft elevation, but 10–16 px radii, real whitespace, and no clipped or rotated elements | Random stickers, tape, torn paper, rotations |
 | **Motion explains** | Motion shows a state change (save, reveal, advance); nothing loops or bounces for effect | Scroll-jacking, parallax, infinite marquees |
 | **Accessible by construction** | Every colour pair is documented with its contrast; focus is always visible | Low-contrast pastels on cream |
 
@@ -47,11 +47,12 @@ A concrete, implementable design system for **soft neo-brutalism**: warm paper s
 | `--paper-raised` | `#FFFFFF` | Cards, inputs, popovers | vs ink 17.8:1 |
 | `--paper-sunk` | `#F4EDE0` | Section bands, table headers, inset areas | subtle step down |
 | `--paper-accent` | `#F1E4CC` | Hero panels, editorial blocks | |
-| `--ink` | `#141210` | Text, borders, shadows | 17.8:1 on paper |
+| `--ink` | `#141210` | Text, icons, the 3 px state rules | 17.8:1 on paper |
 | `--ink-2` | `#4A423A` | Secondary text | ~9.5:1 on paper |
 | `--ink-3` | `#6B6257` | Muted labels, placeholders (use ≥ 14 px medium) | 5.6:1 on paper, 4.8:1 on `--paper-accent` — passes AA on both, do not go lighter |
-| `--line` | `#141210` | Structural borders (2 px) | |
-| `--line-soft` | `#D9CDBC` | Hairlines in dense tables, dividers | decorative only |
+| `--line` | `#E4DACB` | Card and table edges, dividers, page-section rules | — |
+| `--line-strong` | `#C9BCAA` | Inputs, secondary buttons, table-header rule, section rules | — |
+| `--line-soft` | `#ECE3D6` | Disabled controls, faint separators | decorative only |
 
 ### 3.2 Accents
 
@@ -86,7 +87,7 @@ Each subject gets one identity colour, assigned at creation and unique within an
 | `--subject-sunbeam` | `#8A6000` | Economics (text-safe dark variant) |
 | `--subject-mauve` | `#8B3FA8` | Psychology |
 
-**Pairing rule:** each token has a `-fill` (a 14 % tint over paper) and a `-ink` (the value above). Badges use `-fill` background + `-ink` text. Large areas use `-fill` only; `-ink` is for text and 2 px accents.
+**Pairing rule:** each token has a `-fill` (a 14 % tint over paper) and a `-ink` (the value above). Badges use `-fill` background + `-ink` text. Large areas use `-fill` only; `-ink` is for text and 1 px accents.
 
 ### 3.4 Semantic mapping
 
@@ -178,31 +179,39 @@ Nothing above 24 px except pills. A page with more than two `radius-xl` surfaces
 
 ### 5.3 Border
 
+Structure is a **1 px warm hairline**. There is no 2 px border token: a heavier rule is a state marker, not a surface edge.
+
 | Token | Use |
 |---|---|
-| `border-hair` 1 px `--line-soft` | Table rows, dividers, low-emphasis separators |
-| `border-base` 2 px `--ink` | Buttons, cards, inputs, question options |
-| `border-bold` 3 px `--ink` | Hero panels, the active question card, modal frames |
+| `--line` 1 px | Cards, tables, dividers, sheet edges, page-section rules |
+| `--line-strong` 1 px | Inputs, secondary buttons, table-header rule, section rules |
+| `--line-soft` 1 px | Disabled controls, faint separators |
 
-Never use a 1 px ink border on an interactive element — it reads as an accident.
+Two rules:
+
+- An interactive edge uses `--line-strong`, never `--line`: a control must read as a control at rest, without depending on its shadow.
+- 3 px rules are state only — the active tab underline and the studio's active-item inset rule — and the 4 px callout rule is the one decorative left edge. Never draw a 2 px ink border.
+
+The codebase has no `--border-base` / `--border-bold` tokens; do not add them back.
 
 ### 5.4 Elevation
 
-Neo-brutalist shadows are **hard offsets**, no blur:
+Elevation is **soft and neutral**: a wide, low-opacity ink shadow that sits under the surface — never a hard offset and never a coloured glow.
 
 | Token | Value | Use |
 |---|---|---|
-| `shadow-sm` | `2px 2px 0 var(--ink)` | Badges, small chips |
-| `shadow-md` | `4px 4px 0 var(--ink)` | **Default**: cards, buttons at rest |
-| `shadow-lg` | `6px 6px 0 var(--ink)` | Modals, dropdowns, the practice question card |
-| `shadow-subject` | `4px 4px 0 var(--subject-ink)` | Subject-themed cards only |
+| `shadow-sm` | `0 1px 2px rgb(20 18 16 / 0.06)` | Cards at rest, badges, the table shell |
+| `shadow-md` | `0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25)` | **Default raised**: hovered cards, sheets, skip links |
+| `shadow-lg` | `0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3)` | Modals and dropdowns |
+
+There is no `shadow-subject`: a subject card carries its identity in the colour band and tint, and uses the same neutral elevation as every other card.
 
 **Interaction convention (important for consistency):**
 
-- Button rest: `shadow-md`, `translate(0,0)`
-- Button hover: `translate(-1px,-1px)`, `shadow-md` → `shadow-lg` — **pointer-only** (see below)
-- Button active: `translate(2px,2px)`, `shadow-none`
-- Disabled: `shadow-none`, `translate(2px,2px)`, muted fill
+- Rest: `shadow-sm`, `translate(0,0)`
+- Hover: `translate(-1px,-1px)`, `shadow-sm` → `shadow-md` — **pointer-only** (see below)
+- Active: `translate(2px,2px)`; the shadow stays as it was
+- Disabled: `shadow-none`, `transform-none`, muted fill
 
 One shared `.lift` utility carries this convention for every interactive surface (buttons, card links, subject cards). It is defined in two media blocks:
 
@@ -315,7 +324,10 @@ Rules:
   --ink: #141210;
   --ink-2: #4A423A;
   --ink-3: #6B6257;
-  --line-soft: #D9CDBC;
+  --line: #E4DACB;
+  --line-strong: #C9BCAA;
+  --line-soft: #ECE3D6;
+  --shadow-color: #E8DFD1; /* flat fill behind hero line art (§6) */
 
   --cobalt: #2B4EFF;
   --sunbeam: #FFC53D;
@@ -333,12 +345,13 @@ Rules:
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  --shadow-sm: 2px 2px 0 var(--ink);
-  --shadow-md: 4px 4px 0 var(--ink);
-  --shadow-lg: 6px 6px 0 var(--ink);
+  --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
+  --shadow-md:
+    0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+  --shadow-lg:
+    0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
 
-  --border-base: 2px;
-  --border-bold: 3px;
+  /* No --border-* tokens: structure is a 1 px hairline (§5.3). */
 
   /* Adaptive layout (§5.5). Fluid by default; breakpoints only change structure. */
   --gutter: clamp(1rem, 0.4rem + 2.4vw, 2rem);
@@ -374,11 +387,16 @@ theme: {
     colors: {
       paper: { DEFAULT: 'var(--paper)', raised: 'var(--paper-raised)', sunk: 'var(--paper-sunk)', accent: 'var(--paper-accent)' },
       ink: { DEFAULT: 'var(--ink)', 2: 'var(--ink-2)', 3: 'var(--ink-3)' },
+      line: { DEFAULT: 'var(--line)', strong: 'var(--line-strong)', soft: 'var(--line-soft)' },
       cobalt: 'var(--cobalt)', sunbeam: 'var(--sunbeam)', leaf: 'var(--leaf)',
       mint: 'var(--mint)', coral: 'var(--coral)', lilac: 'var(--lilac)', sky: 'var(--sky)', blush: 'var(--blush)',
     },
     borderRadius: { xs: '6px', sm: '10px', md: '12px', lg: '16px', xl: '24px' },
-    boxShadow: { sm: '2px 2px 0 var(--ink)', md: '4px 4px 0 var(--ink)', lg: '6px 6px 0 var(--ink)' },
+    boxShadow: {
+      sm: '0 1px 2px rgb(20 18 16 / 0.06)',
+      md: '0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25)',
+      lg: '0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3)',
+    },
     fontFamily: {
       display: ['var(--font-bricolage)', 'ui-sans-serif'],
       sans: ['var(--font-inter)', 'ui-sans-serif'],
@@ -409,13 +427,13 @@ Each component lists anatomy, variants and constraints. Implementations live in 
 
 - **Anatomy:** option label badge (A/B/C…), content, optional result icon, optional feedback.
 - **Variants:** `choice` (radio semantics), `multi` (checkbox semantics), `short-answer` (textarea), `review-correct`, `review-incorrect`, `review-missed` (the correct option the student did not pick).
-- **Spec:** `radius-md`, `border-base` ink, `shadow-md` at rest; selected = sunbeam fill; correct = mint fill + leaf border + ✓; incorrect = blush fill + coral border + ✗. Min height 64 px, full width, content left-aligned, generous 16 px padding, no truncation.
+- **Spec:** `radius-md`, 1 px `--line` edge, `shadow-sm` at rest; selected = sunbeam fill; correct = mint fill + leaf border + ✓; incorrect = blush fill + coral border + ✗. Min height 64 px, full width, content left-aligned, generous 16 px padding, no truncation.
 - **Accessibility:** the group is a `fieldset` with a `legend` (the question stem); options are real `input[type=radio|checkbox]` visually hidden but focusable, with a visible focus ring on the card. Keyboard: arrows move within the group, space/enter selects.
 - **Anti-pattern:** cards that only change border colour on hover, or that animate on scroll.
 
 ### 9.3 Badge / Pill
 
-- `Badge`: uppercase, `text-xs`, `radius-xs`, `border` 1.5 px, fill tint + ink text. Variants: `status-draft` (paper-sunk), `status-review` (sunbeam), `status-published` (mint), `status-archived` (line-soft), `difficulty-easy|medium|hard|very-hard` (leaf → sunbeam → coral tint ramp), `subject` (subject tint), `type` (paper-raised), and the three **format** variants below.
+- `Badge`: uppercase, `text-xs`, `radius-xs`, 1 px border in a tint of its fill, ink text. Variants: `status-draft` (paper-sunk), `status-review` (sunbeam), `status-published` (mint), `status-archived` (line-soft), `difficulty-easy|medium|hard|very-hard` (leaf → sunbeam → coral tint ramp), `subject` (subject tint), `type` (paper-raised), and the three **format** variants below.
 - `FormatBadge`: the one component allowed to describe content shape. `format-study` (paper-raised, book icon, "Study material"), `format-lesson` (sunbeam fill, ink border, layered icon, "Lesson + practice"), `format-test` (cobalt tint, timer icon, "Practice test"). Never colour-only: each has a distinct icon and label. A page must not invent a fourth label.
 - Max 3 words. Never a badge without text.
 
@@ -427,7 +445,7 @@ Each component lists anatomy, variants and constraints. Implementations live in 
 - `ResourceCard`: title, subtitle, `FormatBadge`, reading minutes, difficulty dot, chevron.
 - `AssessmentCard`: title, `FormatBadge`, question count, duration (or "instant feedback"), mode icon.
 - `StatCard`: big number (tabular), label, optional delta — used on the dashboard only.
-- Spec: paper-raised fill, `border-base` ink, `radius-md`, `shadow-md`; padding 20–24 px; no nested cards (use paper-sunk insets instead).
+- Spec: paper-raised fill, 1 px `--line` edge, `radius-md`, `shadow-sm` at rest and `shadow-md` on hover; padding 20–24 px; no nested cards (use paper-sunk insets instead).
 
 ### 9.5 Callout
 
@@ -435,14 +453,14 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 
 ### 9.6 Form controls
 
-- `TextInput` / `Textarea` / `Select`: paper-raised, `border-base` ink, `radius-sm`, h 44 (textarea auto-grow), 12 px padding. Focus: cobalt 3 px outline offset 2 px. Error: coral border + icon + message below, `aria-describedby` linked.
+- `TextInput` / `Textarea` / `Select`: paper-raised, 1 px `--line-strong` edge, `radius-sm`, h 44 (textarea auto-grow), 12 px padding. Focus: cobalt 3 px outline offset 2 px. Error: coral border + icon + message below, `aria-describedby` linked.
 - `FormField`: label (always visible, never placeholder-only), optional hint, error slot, required marker.
-- `Checkbox` / `Radio` / `Switch`: 20 px box with 2 px ink border; checked = cobalt fill + white tick.
+- `Checkbox` / `Radio` / `Switch`: 20 px box with an ink hairline edge; checked = cobalt fill + white tick.
 - Rule: validation messages appear **below** the field and are announced via `aria-live="polite"`.
 
 ### 9.7 Navigation
 
-- `Header`: 72 px tall (64 mobile), paper background with a 2 px bottom ink rule, logo left, nav centre-left, search + account right. Sticky with a shadow that appears only after 8 px of scroll.
+- `Header`: 72 px tall (64 mobile), paper background with a 1 px `--line` bottom rule, logo left, nav centre-left, search + account right. Sticky with a shadow that appears only after 8 px of scroll.
 - `Breadcrumbs`: `text-sm`, `ink-2`, `/` separators (not `>`), current page in `ink` with `aria-current`.
 - `Tabs`: underline-style with a 3 px ink underline on the active tab; used for topic hub sections and studio editors.
 - `Sidebar` (studio): **264 px** (`--sidebar-w`), paper surface, 1 px right rule, grouped links (Content / Library / Governance), active item = paper-sunk fill + 3 px inset ink rule + `aria-current="page"`. It is persistent — sticky, full viewport height, independently scrolling — from **1024 px** (`lg`) up. It never shrinks into an icon rail: below 1024 px it is replaced by a sheet.
@@ -451,9 +469,9 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 
 ### 9.8 Feedback
 
-- `ProgressBar`: 10 px tall, 2 px ink border, `radius-full` inner fill in the subject colour, `role="progressbar"` with `aria-valuenow/min/max` and an accessible label.
+- `ProgressBar`: 10 px tall, `paper-sunk` track, `radius-full` fill in the subject colour, `role="progressbar"` with `aria-valuenow/min/max` and an accessible label.
 - `Toast`: bottom-right (desktop) / top (mobile), `shadow-lg`, 4 s auto-dismiss, dismiss button, `role="status"`.
-- `Dialog`: paper-raised, `border-bold`, `radius-lg`, `shadow-lg`, focus trapped, `Esc` closes, returns focus to the trigger.
+- `Dialog`: paper-raised, 1 px `--line` edge, `radius-lg`, `shadow-lg`, focus trapped, `Esc` closes, returns focus to the trigger.
 - `EmptyState`: illustration ≤ 160 px, heading, one sentence, primary action, optional secondary link.
 - `Skeleton`: paper-sunk blocks matching the final layout footprint exactly (no shift on load).
 
@@ -472,12 +490,12 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 - Save state line: `Saving… • Saved 12:04 • Unsaved changes • Offline`.
 - Publish checklist panel: blocking items (coral), warnings (sunbeam), passing (leaf), each with a jump link.
 - Question editor: the type selector is a segmented control at the top; changing it warns that answer fields will reset.
-- Block editor: a vertical block list with a drag handle, a per-block inline toolbar, and an "insert block" control between blocks (`text`, `heading`, `image`, `formula`, `table`, `callout`, `video`, `download`, `question section`, `related material`). Blocks are cards on `paper-raised` with 2 px separators; the selected block gets a cobalt left rule. No free-form canvas, no nested blocks.
+- Block editor: a vertical block list with a drag handle, a per-block inline toolbar, and an "insert block" control between blocks (`text`, `heading`, `image`, `formula`, `table`, `callout`, `video`, `download`, `question section`, `related material`). Blocks are cards on `paper-raised` with 1 px `--line` separators; the selected block gets a cobalt left rule. No free-form canvas, no nested blocks.
 - Assessment composer: ordered item list with points override, mode segmented control, duration field that appears only for `test`/`mock`, and a live scope warning when a question is outside the topic.
 
 ### 9.11 Search and autocomplete
 
-- `SearchField`: 44 px, paper-raised, 1.5 px ink border, magnifier icon, `⌘K`/`Ctrl K` hint on desktop, clear button when non-empty.
+- `SearchField`: 44 px, paper-raised, 1 px `--line-strong` edge, magnifier icon, `⌘K`/`Ctrl K` hint on desktop, clear button when non-empty.
 - `SuggestList`: paper-raised, `shadow-md`, max 8 rows, 44 px each; each row = icon + display term + muted subject name; active row = sunbeam fill + ink border; keyboard hint footer (↑↓ to move, ↵ to open, esc to close).
 - Highlighting: matched prefix wrapped in a `mark` with sunbeam tint (never bold-only).
 - `SearchResults`: grouped sections with sticky group labels, each row showing `FormatBadge` + breadcrumb. "Did you mean …?" appears above results as a bordered chip, never as a modal.
@@ -510,8 +528,8 @@ Contrast is verified at implementation time with an automated check, but the **p
 | Do | Don't |
 |---|---|
 | One bold display heading, then quiet body text | Three competing headline styles |
-| 2 px ink borders on things you can click | Borders on every row of text |
-| Hard offset shadows on 1–2 levels | Glows, blurred shadows, glass panels |
+| 1 px hairlines, weighted `--line` → `--line-strong` for controls | Borders on every row of text |
+| Soft neutral shadows on 1–2 levels | Glows, coloured shadows, glass panels |
 | One accent colour per section plus subject colour | Multiple accent gradients |
 | 12 px card radius with 20–24 px padding | 32 px radius with 8 px padding |
 | Illustrations that explain the topic | Generic decorative blobs and floating shapes |
@@ -559,7 +577,7 @@ Contrast is verified at implementation time with an automated check, but the **p
 7. The reduced-motion and 200 % zoom builds remain usable with no clipped text.
 8. A subject card renders in its subject colour purely from `--subject-*` variables, with no per-subject CSS.
 9. The print stylesheet produces a readable material page.
-10. A visual review against §2's principles rejects any gradient, glass panel, blurred shadow or rotation.
+10. A visual review against §2's principles rejects any gradient, glass panel, coloured glow, hard offset shadow or rotation.
 11. Every page's horizontal padding comes from `--gutter` and its vertical rhythm from `--section-y`; no page hard-codes `px-4`, `py-24` or a similar fixed value at the shell level.
 12. `documentElement.scrollWidth − clientWidth` is 0 at 320, 360, 390, 414, 480, 768, 1024, 1280, 1440 and 1920 px on `/`, `/subjects`, the studio library and the studio editor.
 13. Below 768 px no studio table is visible and its card list is; above 768 px the reverse. The visible representation fits its container without horizontal scrolling.

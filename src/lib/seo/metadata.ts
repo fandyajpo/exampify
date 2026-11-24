@@ -13,6 +13,14 @@ import { publicEnv } from "@/lib/env";
 
 const BRAND = "Exampify";
 
+/**
+ * A title that already names the brand must not go through the root layout's
+ * `%s | Exampify` template, or the browser renders the brand twice.
+ */
+function namesBrand(title: string): boolean {
+  return title.startsWith(BRAND) || title.endsWith(`— ${BRAND}`);
+}
+
 export function absoluteUrl(path: string): string {
   return `${publicEnv.NEXT_PUBLIC_SITE_URL}${path === "/" ? "" : path}`;
 }
@@ -58,7 +66,7 @@ export function buildMetadata({ title, description: metaDescription, path, noind
   const canonical = absoluteUrl(path);
 
   return {
-    title,
+    title: namesBrand(title) ? { absolute: title } : title,
     description: metaDescription,
     alternates: { canonical: path },
     robots: noindex ? { index: false, follow: true } : { index: true, follow: true },

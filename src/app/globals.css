@@ -6,10 +6,8 @@
  * Tailwind theme mapping below; a raw hex value inside a component is a review-blocking
  * defect (§8). Dark mode is deliberately absent: it is deferred in MVP (§3.5, `OQ-DS1`).
  *
- * Deliberate departures from §8, toward a more editorial, education-facing treatment:
- * structure is a 1 px warm hairline (`--line`, or `--line-strong` for interactive edges)
- * rather than a 2 px ink rule, elevation is soft neutral shadow rather than a hard offset,
- * and text stays on `--ink`.
+ * Structure is a 1 px warm hairline (`--line`, or `--line-strong` for interactive edges) and
+ * elevation is a soft neutral shadow, not a hard offset (§5.3, §5.4); text stays on `--ink`.
  */
 
 :root {
@@ -47,9 +45,6 @@
     0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
   --shadow-lg:
     0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
-
-  --border-base: 1px;
-  --border-bold: 3px;
 
   /*
    * Adaptive layout tokens. Gutters and section rhythm scale with the viewport instead of

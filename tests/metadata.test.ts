@@ -49,6 +49,21 @@ describe("metadata", () => {
     expect(meta.openGraph?.url).toBe("https://exampify.test/subjects");
   });
 
+  it("renders a title that already names the brand verbatim", () => {
+    const meta = buildMetadata({
+      title: titles.subjects(),
+      description: "D",
+      path: "/subjects",
+    });
+
+    // The root layout appends " | Exampify" to a plain string title, so a branded
+    // title takes the absolute form instead of doubling the brand.
+    expect(meta.title).toEqual({ absolute: "Subjects: study notes, lessons & practice — Exampify" });
+    expect(buildMetadata({ title: "Sign in", description: "D", path: "/sign-in" }).title).toBe(
+      "Sign in",
+    );
+  });
+
   it("emits neither a trailing slash nor a doubled origin for the home path", () => {
     expect(absoluteUrl("/")).toBe("https://exampify.test");
   });

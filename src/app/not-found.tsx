@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ButtonLink } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Page not found — Exampify",
+  title: "Page not found",
   robots: { index: false, follow: true },
 };
 
