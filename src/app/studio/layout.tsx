@@ -24,6 +24,7 @@ const NAV = [
   { href: "/studio", label: "Overview" },
   { href: "/studio/subjects", label: "Subjects" },
   { href: "/studio/media", label: "Media" },
+  { href: "/studio/audit", label: "Audit" },
 ] as const;
 
 export default async function StudioLayout({

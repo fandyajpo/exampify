@@ -48,6 +48,8 @@ import {
   mediaTicketEnvelopeSchema,
   mediaUploadUrlSchema,
 } from "@/lib/validation/media";
+import { auditListQuerySchema, auditListSchema } from "@/lib/validation/audit";
+import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
@@ -265,6 +267,48 @@ const MEDIA_ROUTES: Operation[] = [
       error(403),
       error(404),
       error(503),
+    ],
+  },
+];
+
+/** `§7.7`: the read-only audit trail. Writing happens inside each mutation. */
+const AUDIT_ROUTES: Operation[] = [
+  {
+    method: "get",
+    path: "/api/v1/studio/audit",
+    operationId: "list-audit",
+    summary: "Read the audit trail",
+    description:
+      "`admin` reads every actor; `author`/`reviewer` only their own rows, and naming another actor is `403`. " +
+      "Newest first, cursor-paginated, filtered by `entityType`, `entityId`, `actorId` and an inclusive `from`/`to` range. " +
+      "`metadata` holds changed field names, transitions and ids — never a value, an answer key or an email address.",
+    tag: "studio",
+    request: auditListQuerySchema,
+    responses: [
+      { status: 200, description: "A page of audit entries.", schema: auditListSchema },
+      error(401),
+      error(403),
+      error(422),
+    ],
+  },
+];
+
+/** `§7.7`: the studio dashboard — totals, the content-gap report and recent edits. */
+const OVERVIEW_ROUTES: Operation[] = [
+  {
+    method: "get",
+    path: "/api/v1/studio/overview",
+    operationId: "studio-overview",
+    summary: "Read the studio overview",
+    description:
+      "`author`+. A total per content table, the content-gap report (live topics with no learning resource and live topics with no assessment) and the latest audit entries. " +
+      "A gap is informational, not a defect: a topic may publish with either a resource or an assessment. " +
+      "Recent edits follow the audit rule — `admin` sees every actor, `author`/`reviewer` only their own (`SEC §6`).",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "Counts, gaps and recent edits.", schema: studioOverviewEnvelopeSchema },
+      error(401),
+      error(403),
     ],
   },
 ];
@@ -788,5 +832,7 @@ export const OPERATIONS: readonly Operation[] = [
   },
   ...RESOURCE_ROUTES,
   ...MEDIA_ROUTES,
+  ...AUDIT_ROUTES,
+  ...OVERVIEW_ROUTES,
   ...TRANSITION_ROUTES,
 ];

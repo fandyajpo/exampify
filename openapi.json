@@ -413,6 +413,154 @@
         "description": "Serves the committed `openapi.json` in non-production only (`OQ-API2` is unresolved, so a public contract is not assumed). Returns 404 in production."
       }
     },
+    "/api/v1/studio/audit": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "summary": "Read the audit trail",
+        "operationId": "list-audit",
+        "responses": {
+          "200": {
+            "description": "A page of audit entries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "actorId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "action": {
+                            "type": "string"
+                          },
+                          "entityType": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actorId",
+                          "action",
+                          "entityType",
+                          "entityId",
+                          "metadata",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          }
+        },
+        "description": "`admin` reads every actor; `author`/`reviewer` only their own rows, and naming another actor is `403`. Newest first, cursor-paginated, filtered by `entityType`, `entityId`, `actorId` and an inclusive `from`/`to` range. `metadata` holds changed field names, transitions and ids — never a value, an answer key or an email address.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityType": {
+                    "type": "string",
+                    "enum": [
+                      "curriculum",
+                      "level",
+                      "subject",
+                      "chapter",
+                      "topic",
+                      "resource",
+                      "media"
+                    ]
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "actorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 40
+                  },
+                  "to": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 40
+                  },
+                  "limit": {
+                    "default": 20,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/studio/blocks/{blockId}": {
       "patch": {
         "tags": [
@@ -2788,6 +2936,226 @@
           }
         },
         "description": "`author`+. A presigned `GET` valid for at most 10 minutes; never a long-lived URL."
+      }
+    },
+    "/api/v1/studio/overview": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "summary": "Read the studio overview",
+        "operationId": "studio-overview",
+        "responses": {
+          "200": {
+            "description": "Counts, gaps and recent edits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "counts": {
+                          "type": "object",
+                          "properties": {
+                            "curricula": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "levels": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "subjects": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "chapters": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "topics": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "resources": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "assessments": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "curricula",
+                            "levels",
+                            "subjects",
+                            "chapters",
+                            "topics",
+                            "resources",
+                            "assessments"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "gaps": {
+                          "type": "object",
+                          "properties": {
+                            "withoutResource": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "draft",
+                                      "in_review",
+                                      "published",
+                                      "archived"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "slug",
+                                  "title",
+                                  "status"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "withoutAssessment": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "draft",
+                                      "in_review",
+                                      "published",
+                                      "archived"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "slug",
+                                  "title",
+                                  "status"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "withoutResource",
+                            "withoutAssessment"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "recentEdits": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "actorId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "action": {
+                                "type": "string"
+                              },
+                              "entityType": {
+                                "type": "string"
+                              },
+                              "entityId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "metadata": {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {}
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "actorId",
+                              "action",
+                              "entityType",
+                              "entityId",
+                              "metadata",
+                              "createdAt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "counts",
+                        "gaps",
+                        "recentEdits"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        },
+        "description": "`author`+. A total per content table, the content-gap report (live topics with no learning resource and live topics with no assessment) and the latest audit entries. A gap is informational, not a defect: a topic may publish with either a resource or an assessment. Recent edits follow the audit rule — `admin` sees every actor, `author`/`reviewer` only their own (`SEC §6`)."
       }
     },
     "/api/v1/studio/resources/{id}": {
