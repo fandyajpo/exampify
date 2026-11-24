@@ -1,24 +1,32 @@
 /**
  * Site header (DESIGN_SYSTEM.md §9.7, UI_UX_GUIDELINES.md §9).
  *
- * Mobile is logo + search + a `<details>` menu, so the chrome stays a server component and
- * the menu still works with the keyboard and without JavaScript. Only the sticky shell is
- * client-side, because the scroll shadow is a state change.
+ * Adaptive by container: the full bar from `md`, and a logo + search + menu sheet below it, so
+ * no link ever competes with the wordmark for width. Mobile navigation is a full-width sheet
+ * (`SiteMobileMenu`) instead of a 224 px dropdown; only the sheet is client-side, because it
+ * needs route-change dismissal. The bar itself stays a server component.
  */
 import Link from "next/link";
 import { StickyHeader } from "@/components/motion/sticky-header";
+import { SiteMobileMenu } from "@/components/site-mobile-menu";
+import { SITE_NAV_LINKS } from "@/components/site-nav-links";
 import { ButtonLink } from "@/components/ui/button";
-import { IconMenu, IconSearch } from "@/components/ui/icons";
-
-const NAV_LINKS = [
-  { href: "/subjects", label: "Subjects" },
-  { href: "/search", label: "Search" },
-] as const;
+import { IconSearch } from "@/components/ui/icons";
+import { NavLink } from "@/components/ui/nav-link";
 
 export function SiteHeader(): React.JSX.Element {
   return (
     <StickyHeader>
-      <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center gap-3 px-4 md:h-[72px] md:gap-10 md:px-6 lg:px-8">
+      {/* One skip link for every public page, placed before the bar so it is the first tab
+          stop. The studio shell carries its own. */}
+      <a
+        href="#main"
+        className="sr-only rounded-sm bg-paper-raised px-4 py-3 font-medium shadow-md focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
+      >
+        Skip to content
+      </a>
+
+      <div className="shell flex h-16 items-center gap-3 md:h-[72px] md:gap-8">
         <Link
           href="/"
           className="font-display text-lg font-semibold tracking-tight text-ink"
@@ -29,14 +37,14 @@ export function SiteHeader(): React.JSX.Element {
 
         <nav aria-label="Main" className="hidden md:block">
           <ul className="flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
+            {SITE_NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <Link
+                <NavLink
                   href={link.href}
-                  className="inline-flex h-11 items-center rounded-sm px-3 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
-                >
-                  {link.label}
-                </Link>
+                  label={link.label}
+                  className="inline-flex h-11 items-center rounded-sm px-3 text-sm font-medium text-ink-2 transition-colors hover:bg-paper-sunk hover:text-ink"
+                  activeClassName="bg-paper-sunk text-ink"
+                />
               </li>
             ))}
           </ul>
@@ -55,36 +63,7 @@ export function SiteHeader(): React.JSX.Element {
             Sign in
           </ButtonLink>
 
-          <details className="group relative md:hidden">
-            <summary
-              className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-sm border border-line-strong text-ink-2 transition-colors hover:border-ink/40 hover:text-ink [&::-webkit-details-marker]:hidden"
-              aria-label="Menu"
-            >
-              <IconMenu className="size-5" />
-            </summary>
-            {/* CSS-only entrance: `<details>` needs no JavaScript, so the menu still works
-                before hydration and with scripting off (`DESIGN_SYSTEM.md` §7). */}
-            <ul className="motion-menu-panel absolute top-full right-0 mt-2 w-56 rounded-md border border-line bg-paper-raised p-2 shadow-md">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="flex min-h-11 items-center rounded-sm px-3 text-base font-medium text-ink transition-colors hover:bg-paper-sunk"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="/sign-in"
-                  className="flex min-h-11 items-center rounded-sm px-3 text-base font-medium text-ink transition-colors hover:bg-paper-sunk"
-                >
-                  Sign in
-                </Link>
-              </li>
-            </ul>
-          </details>
+          <SiteMobileMenu />
         </div>
       </div>
     </StickyHeader>

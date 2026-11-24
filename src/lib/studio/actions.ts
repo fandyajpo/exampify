@@ -6,6 +6,8 @@ import type { ZodError } from "zod";
 
 import { requireCapability } from "@/lib/auth/actor";
 import { HttpError } from "@/lib/http/errors";
+import { createAssessment, duplicateAssessment } from "@/lib/services/assessments-admin";
+import { createQuestion, duplicateQuestion } from "@/lib/services/questions-admin";
 import {
   createResource,
   duplicateResource,
@@ -37,6 +39,8 @@ import {
   topicUpdateSchema,
 } from "@/lib/validation/taxonomy";
 import { toFieldErrors } from "@/lib/validation/errors";
+import { assessmentCreateSchema } from "@/lib/validation/assessments";
+import { questionCreateSchema } from "@/lib/validation/questions";
 import { resourceCreateSchema, resourceUpdateSchema } from "@/lib/validation/resources";
 import { TRANSITION_ENTITIES, transitionSchema } from "@/lib/validation/transitions";
 
@@ -434,6 +438,74 @@ export async function duplicateResourceAction(formData: FormData): Promise<void>
   const copy = await duplicateResource(actor, text(formData, "id"));
   revalidatePath("/studio", "layout");
   redirect(`/studio/resources/${copy.id}`);
+}
+
+/** The question bank's create door: a topic, a type and a stem are enough to start. */
+export async function createQuestionAction(
+  _previous: StudioFormState,
+  formData: FormData,
+): Promise<StudioFormState> {
+  const actor = await requireCapability("content:write");
+  const parsed = questionCreateSchema.safeParse({
+    topicId: text(formData, "topicId"),
+    type: text(formData, "type"),
+    stemMd: text(formData, "stemMd"),
+    difficulty: optional(formData, "difficulty"),
+  });
+  if (!parsed.success) return invalid(parsed.error);
+
+  let questionId: string;
+  try {
+    questionId = (await createQuestion(actor, parsed.data)).id;
+  } catch (error) {
+    return failed(error);
+  }
+
+  revalidatePath("/studio", "layout");
+  redirect(`/studio/questions/${questionId}`);
+}
+
+/** The composer's create door: a subject, an optional topic and a mode. */
+export async function createAssessmentAction(
+  _previous: StudioFormState,
+  formData: FormData,
+): Promise<StudioFormState> {
+  const actor = await requireCapability("content:write");
+  const topicId = optional(formData, "topicId");
+  const parsed = assessmentCreateSchema.safeParse({
+    subjectId: text(formData, "subjectId"),
+    ...(topicId ? { topicId } : {}),
+    title: text(formData, "title"),
+    mode: optional(formData, "mode"),
+    durationSeconds: optionalNumber(formData, "durationSeconds"),
+    difficulty: optional(formData, "difficulty"),
+    items: [],
+  });
+  if (!parsed.success) return invalid(parsed.error);
+
+  let assessmentId: string;
+  try {
+    assessmentId = (await createAssessment(actor, parsed.data)).id;
+  } catch (error) {
+    return failed(error);
+  }
+
+  revalidatePath("/studio", "layout");
+  redirect(`/studio/assessments/${assessmentId}`);
+}
+
+export async function duplicateQuestionAction(formData: FormData): Promise<void> {
+  const actor = await requireCapability("content:write");
+  const copy = await duplicateQuestion(actor, text(formData, "id"));
+  revalidatePath("/studio", "layout");
+  redirect(`/studio/questions/${copy.id}`);
+}
+
+export async function duplicateAssessmentAction(formData: FormData): Promise<void> {
+  const actor = await requireCapability("content:write");
+  const copy = await duplicateAssessment(actor, text(formData, "id"));
+  revalidatePath("/studio", "layout");
+  redirect(`/studio/assessments/${copy.id}`);
 }
 
 export async function updateSubjectAction(

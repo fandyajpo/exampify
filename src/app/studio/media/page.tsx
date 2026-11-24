@@ -62,7 +62,10 @@ export default async function StudioMediaPage({
   const rawStatus = searchParam(params, "status");
   const cursor = searchParam(params, "cursor");
 
-  const purpose = rawPurpose === "image" || rawPurpose === "document" ? rawPurpose : undefined;
+  const purpose =
+    rawPurpose === "image" || rawPurpose === "document"
+      ? rawPurpose
+      : undefined;
   const status =
     rawStatus === "ready" || rawStatus === "pending" || rawStatus === "deleted"
       ? rawStatus
@@ -81,11 +84,15 @@ export default async function StudioMediaPage({
   return (
     <>
       <header className="max-w-[62ch]">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Content</p>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">Media</h1>
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
+          Content
+        </p>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">
+          Media
+        </h1>
         <p className="mt-3 text-ink-2">
-          Every uploaded image and document. Alt text is what a screen reader reads, and it is
-          required before an image can be published.
+          Every uploaded image and document. Alt text is what a screen reader
+          reads, and it is required before an image can be published.
         </p>
       </header>
 
@@ -98,8 +105,11 @@ export default async function StudioMediaPage({
         action="/studio/media"
         className="mt-6 flex flex-wrap items-end gap-3 rounded-md border border-line bg-paper-raised p-4 shadow-sm"
       >
-        <div className="min-w-56 flex-1">
-          <label htmlFor="media-filter-q" className="text-sm font-medium text-ink">
+        <div className="flex min-w-56 flex-1 flex-col items-start">
+          <label
+            htmlFor="media-filter-q"
+            className="text-sm font-medium text-ink"
+          >
             Search alt text
           </label>
           <Input
@@ -111,8 +121,13 @@ export default async function StudioMediaPage({
             className="mt-1 h-9"
           />
         </div>
-        <div>
-          <label htmlFor="media-filter-purpose" className="text-sm font-medium text-ink">
+        {/* Every filter is a column: a `<select>` is inline-block, so a bare label above
+            one ends up sharing its line and gets overlapped by the control. */}
+        <div className="flex flex-col items-start">
+          <label
+            htmlFor="media-filter-purpose"
+            className="text-sm font-medium text-ink"
+          >
             Purpose
           </label>
           <Select
@@ -128,8 +143,11 @@ export default async function StudioMediaPage({
             ))}
           </Select>
         </div>
-        <div>
-          <label htmlFor="media-filter-status" className="text-sm font-medium text-ink">
+        <div className="flex flex-col items-start">
+          <label
+            htmlFor="media-filter-status"
+            className="text-sm font-medium text-ink"
+          >
             Status
           </label>
           <Select
@@ -169,10 +187,17 @@ export default async function StudioMediaPage({
       )}
 
       {cursor || page.nextCursor ? (
-        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-4 text-sm">
+        <nav
+          aria-label="Pagination"
+          className="mt-6 flex items-center justify-between gap-4 text-sm"
+        >
           {cursor ? (
             <Link
-              href={mediaHref({ q, purpose: purpose ?? "", status: status ?? "" })}
+              href={mediaHref({
+                q,
+                purpose: purpose ?? "",
+                status: status ?? "",
+              })}
               className="text-ink-2 underline-offset-4 hover:text-ink hover:underline"
             >
               ← First page

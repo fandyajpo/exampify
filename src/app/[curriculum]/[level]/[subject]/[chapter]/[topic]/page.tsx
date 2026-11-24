@@ -78,7 +78,7 @@ export default async function TopicPage({
 
       <main id="main" className="flex-1">
         <section className="border-b border-line-strong bg-paper-accent">
-          <div className="mx-auto w-full max-w-[820px] px-4 py-12 md:px-6 md:py-16">
+          <div className="shell-narrow py-12 md:py-16">
             <Breadcrumbs items={trail} />
 
             <h1 className="mt-6 font-display text-4xl font-semibold tracking-[-0.03em]">
@@ -95,7 +95,7 @@ export default async function TopicPage({
           </div>
         </section>
 
-        <div className="mx-auto w-full max-w-[820px] px-4 py-14 md:px-6 md:py-20">
+        <div className="shell-narrow section-y">
           {page.topic.objectives.length > 0 ? (
             <section aria-labelledby="objectives">
               <h2

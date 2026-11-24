@@ -10,6 +10,12 @@
 
 export type ContentStatus = "draft" | "in_review" | "published" | "archived";
 export type Difficulty = "easy" | "medium" | "hard" | "very_hard";
+export type QuestionType =
+  | "multiple_choice"
+  | "multiple_select"
+  | "true_false"
+  | "short_answer";
+export type OptionLabel = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
 
 export interface CurriculaTable {
   id: string;
@@ -136,6 +142,51 @@ export interface AssessmentsTable {
   updated_by: string | null;
   created_at: number;
   updated_at: number;
+}
+
+export interface QuestionsTable {
+  id: string;
+  topic_id: string;
+  question_type: QuestionType;
+  stem_md: string;
+  media_id: string | null;
+  difficulty: Difficulty;
+  explanation_md: string;
+  /** Versioned JSON; parsed with `AnswerKeySchema` on every read (`QUESTION_ENGINE.md` §3). */
+  answer_key: string;
+  points_x100: number;
+  status: ContentStatus;
+  published_at: number | null;
+  version: number;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+/** Presentational only: correctness lives in `questions.answer_key` (ADR-004). */
+export interface QuestionOptionsTable {
+  id: string;
+  question_id: string;
+  label: OptionLabel;
+  content_md: string;
+  feedback_md: string | null;
+  position: number;
+}
+
+/** Cross-listing (`ADR-003`): exactly one primary row, enforced by a partial unique index. */
+export interface QuestionTopicsTable {
+  question_id: string;
+  topic_id: string;
+  is_primary: number;
+}
+
+export interface AssessmentItemsTable {
+  id: string;
+  assessment_id: string;
+  question_id: string;
+  position: number;
+  points_x100_override: number | null;
 }
 
 /**
@@ -267,6 +318,10 @@ export interface Database {
   topics: TopicsTable;
   learning_resources: LearningResourcesTable;
   assessments: AssessmentsTable;
+  assessment_items: AssessmentItemsTable;
+  questions: QuestionsTable;
+  question_options: QuestionOptionsTable;
+  question_topics: QuestionTopicsTable;
   content_blocks: ContentBlocksTable;
   resource_assessments: ResourceAssessmentsTable;
   search_events: SearchEventsTable;

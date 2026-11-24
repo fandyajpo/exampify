@@ -126,7 +126,7 @@ export default async function StudioOverviewPage(): Promise<React.JSX.Element> {
         <h2 id="counts" className="sr-only">
           Content counts
         </h2>
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <dl className="grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-3">
           {COUNT_FIELDS.map((field) => (
             <div
               key={field.key}

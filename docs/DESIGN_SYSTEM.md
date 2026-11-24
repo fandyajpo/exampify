@@ -2,8 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| Version | 1.0 |
-| Status | Proposed — tokens are normative once Phase 1 starts |
+| Version | 1.1 |
+| Status | Normative — §4.2, §5.1, §5.5, §5.4, §7 and §9.7/§9.9 describe the shipped layout system |
+| Changelog | 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
 | Supersedes | Version 0.1 (materials/tutorials vocabulary, no format or search components) |
 | Depends on | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) (§3 design direction) |
 | Referenced by | [UI_UX_GUIDELINES.md](./UI_UX_GUIDELINES.md), [MVP_ROADMAP.md](./MVP_ROADMAP.md) |
@@ -119,19 +120,21 @@ Loaded with `next/font` (self-hosted, `display: swap`, subset latin). No Google 
 
 ### 4.2 Scale
 
-| Token | rem / px | Line height | Tracking | Use |
-|---|---|---|---|---|
-| `text-xs` | 0.75 / 12 | 1.4 | +0.01em | Badges, meta |
-| `text-sm` | 0.875 / 14 | 1.45 | 0 | Captions, table cells, helper text |
-| `text-base` | 1.0625 / 17 | 1.6 | 0 | **Reading body** |
-| `text-lg` | 1.25 / 20 | 1.55 | -0.005em | Lead paragraphs |
-| `text-xl` | 1.5 / 24 | 1.35 | -0.01em | Card titles |
-| `text-2xl` | 1.875 / 30 | 1.2 | -0.015em | Section headings |
-| `text-3xl` | 2.375 / 38 | 1.1 | -0.02em | Page titles |
-| `text-4xl` | 3 / 48 | 1.02 | -0.025em | Topic/programme titles |
-| `text-5xl` | 4 / 64 | 0.98 | -0.03em | Hero (desktop only) |
+The three text tokens above `text-xl` are **fluid**: they interpolate with `clamp()` between a phone floor and a desktop cap, so a 390 px phone and a 1440 px laptop both get a deliberate size instead of the same 48 px heading. `text-xs`–`text-xl` stay fixed, because UI chrome, badges and card titles must not shrink on narrow screens.
 
-Display headings use Bricolage at 600–800 with tight tracking. Body never goes below 17 px on content pages (14 px only in UI chrome).
+| Token | Phone floor | Desktop cap | `clamp()` value | Line height | Track/use |
+|---|---|---|---|---|---|
+| `text-xs` | 12 | 12 | `0.75rem` | 1.4 | +0.01em · badges, meta |
+| `text-sm` | 14 | 14 | `0.875rem` | 1.45 | 0 · captions, table cells, helper text |
+| `text-base` | 17 | 17 | `1.0625rem` | 1.6 | 0 · **reading body** |
+| `text-lg` | 20 | 20 | `1.25rem` | 1.55 | −0.005em · lead paragraphs, card titles |
+| `text-xl` | 24 | 24 | `1.5rem` | 1.35 | −0.01em · card titles |
+| `text-2xl` | 24 | 30 | `clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem)` | 1.2 | −0.015em · section headings |
+| `text-3xl` | 32 | 38 | `clamp(2rem, 1.55rem + 1.9vw, 2.375rem)` | 1.1 | −0.02em · page titles |
+| `text-4xl` | 38 | 48 | `clamp(2.375rem, 1.6rem + 3.4vw, 3rem)` | 1.02 | −0.025em · topic/programme titles |
+| `text-5xl` | 44 | 64 | `clamp(2.75rem, 1.6rem + 4.6vw, 4rem)` | 0.98 | −0.03em · hero only, one per page |
+
+Display headings use Bricolage at 600–800 with tight tracking. Body never goes below 17 px on content pages (14 px only in UI chrome). The clamping happens in tokens, never in a component: no `text-[2.7vw]` or per-page media queries for type.
 
 ### 4.3 Rules
 
@@ -149,7 +152,16 @@ Display headings use Bricolage at 600–800 with tight tracking. Body never goes
 
 `space-1` 4 · `space-2` 8 · `space-3` 12 · `space-4` 16 · `space-5` 20 · `space-6` 24 · `space-8` 32 · `space-10` 40 · `space-12` 48 · `space-16` 64 · `space-20` 80 · `space-24` 96 · `space-32` 128.
 
-Rhythm: inside a component 4–12; between components 16–24; between sections 64–96 (mobile 48–64); page gutters 16 (mobile) / 24 (tablet) / 32 (desktop, inside a 1280 px container).
+Rhythm: inside a component 4–12; between components 16–24; between sections 64–96 (mobile 48–64).
+
+Page gutters and section rhythm are **fluid tokens**, not breakpoint steps (§5.5):
+
+| Token | Value | Actual range | Use |
+|---|---|---|---|
+| `--gutter` | `clamp(1rem, 0.4rem + 2.4vw, 2rem)` | 16 px at ≤ 400 px, 32 px at ≥ ~1066 px | Inline padding of every shell |
+| `--section-y` | `clamp(3rem, 2rem + 4vw, 5rem)` | 48 px at ≤ 400 px, 80 px at ≥ 1200 px | Vertical rhythm between page bands |
+
+A page that needs a different gutter is a page with a layout bug, not a new padding value.
 
 ### 5.2 Radius
 
@@ -188,11 +200,65 @@ Neo-brutalist shadows are **hard offsets**, no blur:
 **Interaction convention (important for consistency):**
 
 - Button rest: `shadow-md`, `translate(0,0)`
-- Button hover: `translate(-1px,-1px)`, `shadow-lg` (only where motion is allowed)
+- Button hover: `translate(-1px,-1px)`, `shadow-md` → `shadow-lg` — **pointer-only** (see below)
 - Button active: `translate(2px,2px)`, `shadow-none`
 - Disabled: `shadow-none`, `translate(2px,2px)`, muted fill
 
-This produces the tactile "pressed" feel without any blur or glow.
+One shared `.lift` utility carries this convention for every interactive surface (buttons, card links, subject cards). It is defined in two media blocks:
+
+1. `@media (prefers-reduced-motion: no-preference)` — the 120 ms transition and the `:active` press (`translate(2px,2px)`).
+2. `@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)` — the `:hover` lift (`translate(-1px,-1px)`).
+
+**Hover lift is a pointer-only affordance.** On a touch screen `:hover` sticks after a tap, so a tapped row or card stays raised, shifts its neighbours and looks selected. The lift therefore never fires on coarse pointers; `:active` press feedback still fires everywhere, and colour/border/shadow state changes remain on every device. Never re-introduce an ungated `:hover` transform, and never gate it on `@media (hover: none)` as a workaround — gate on the positive capability query.
+
+---
+
+### 5.5 Responsive layout system
+
+The layout is **CSS-first**: fluid tokens do the continuous work, and breakpoints only switch *structure* (sidebar vs sheet, table vs card list) where one form genuinely cannot serve both. No user-agent or touch sniffing, no JS viewport measurement, no breakpoint chosen for a device brand.
+
+#### 5.5.1 Layout tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--gutter` | `clamp(1rem, 0.4rem + 2.4vw, 2rem)` | Inline padding for `.shell` and `.shell-narrow` |
+| `--section-y` | `clamp(3rem, 2rem + 4vw, 5rem)` | `.section-y` vertical rhythm |
+| `--shell-max` | `1240px`, `1360px` at ≥ 1536 px | Public content shell |
+| `--studio-max` | `1120px`, `1180px` at ≥ 1536 px | Studio content column beside the sidebar |
+| `--sidebar-w` | `264px` | Studio sidebar track |
+
+Layout utilities, used instead of per-page padding classes:
+
+- `.shell` — `max-width: var(--shell-max)`, centred, `padding-inline: var(--gutter)`. Every public page and header/footer uses it.
+- `.shell-narrow` — the same padding at an 820 px measure, for auth screens and readers.
+- `.section-y` — `padding-block: var(--section-y)`.
+- `.card-grid` — `repeat(auto-fit, minmax(min(100%, 17rem), 1fr))` with fluid gap: intrinsic column count, so the same list is right in a wide shell and in the studio's narrower column. `min(100%, …)` guarantees one column never overflows its container.
+- `.table-shell` / `.data-table` — §9.9.
+- `.subject-card` — container query, §5.5.3.
+
+**Wide screens get more measure, not more margin.** At ≥ 1536 px both shells grow (1240 → 1360, 1120 → 1180) because there is room for a fourth card at its natural width; a 1920 px display must not render a 1240 px page with 340 px of empty paper on each side.
+
+#### 5.5.2 Breakpoint rationale
+
+Breakpoints are content thresholds, not framework defaults that happened to fit. Tailwind v4 defaults are retained so the codebase has one set of names.
+
+| Width | Name | What changes | Why there |
+|---|---|---|---|
+| 320 px | — | Floor: single column, 16 px gutters, no horizontal scroll, cards stack, studio gets the top bar + sheet | Smallest viewport the product supports |
+| 400 px | — | `--gutter` starts growing past 16 px | Below this, 16 px is already the right proportion |
+| 640 px (`sm`) | small | Card padding steps 20 → 24 px; two-up grids become possible | Enough width for a card to breathe |
+| 768 px (`md`) | medium | **Every studio table becomes a card list**; studio main padding steps up | A real six-column table can no longer fit a legible row |
+| 1024 px (`lg`) | large | **Studio sidebar (264 px) appears and the mobile sheet disappears**; table cell padding widens; studio content gets the two-column grid | Sidebar + a ≥ 740 px content column, both usable |
+| 1280 px (`xl`) | extra large | Question **Type** column appears in the table | First width where the extra column does not crowd the title |
+| 1536 px | wide | `--shell-max` and `--studio-max` grow | Room for a fourth card without shrinking the others |
+
+Nothing switches at a width because a device is expected there; each rule above is tied to the content that must fit.
+
+#### 5.5.3 Container queries
+
+`SubjectCard` is the one component that must look right at two very different widths in the same viewport (three-up on the homepage shell, two-up inside the studio column). It therefore sets `container-type: inline-size` and responds to **its own** width: at ≤ 18 rem the body padding drops 24 → 16 px, the gap 20 → 14 px, and the title 20 → 17 px. The rule lives in `@layer components` because a Tailwind utility outside that layer would silently override it.
+
+Use a container query, not a media query, whenever a component's correct layout depends on the space it is given rather than on the screen width.
 
 ---
 
@@ -225,7 +291,7 @@ Library: **Motion** (`motion/react`), used client-side only where a state change
 | Progress fill | Width 240 ms `ease-out` |
 | Toast | 180 ms in, 120 ms out |
 | Dialog | 160 ms scale 0.98→1 + opacity |
-| Hover lift | 120 ms, 1 px translate + shadow step |
+| Hover lift | 120 ms, 1 px translate + shadow step — pointer-only (`hover: hover` + `pointer: fine`) |
 
 Rules:
 - Durations: 120 ms (micro), 180 ms (standard), 240 ms (emphasis). No transition above 320 ms.
@@ -273,6 +339,29 @@ Rules:
 
   --border-base: 2px;
   --border-bold: 3px;
+
+  /* Adaptive layout (§5.5). Fluid by default; breakpoints only change structure. */
+  --gutter: clamp(1rem, 0.4rem + 2.4vw, 2rem);
+  --section-y: clamp(3rem, 2rem + 4vw, 5rem);
+  --shell-max: 1240px;
+  --studio-max: 1120px;
+  --sidebar-w: 264px;
+}
+
+/* Wide displays get more measure, not more margin (§5.5.1). */
+@media (min-width: 1536px) {
+  :root {
+    --shell-max: 1360px;
+    --studio-max: 1180px;
+  }
+}
+
+/* Fluid display type (§4.2): the clamp lives in the token, never in a component. */
+@theme inline {
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem);
+  --text-3xl: clamp(2rem, 1.55rem + 1.9vw, 2.375rem);
+  --text-4xl: clamp(2.375rem, 1.6rem + 3.4vw, 3rem);
+  --text-5xl: clamp(2.75rem, 1.6rem + 4.6vw, 4rem);
 }
 ```
 
@@ -356,7 +445,8 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 - `Header`: 72 px tall (64 mobile), paper background with a 2 px bottom ink rule, logo left, nav centre-left, search + account right. Sticky with a shadow that appears only after 8 px of scroll.
 - `Breadcrumbs`: `text-sm`, `ink-2`, `/` separators (not `>`), current page in `ink` with `aria-current`.
 - `Tabs`: underline-style with a 3 px ink underline on the active tab; used for topic hub sections and studio editors.
-- `Sidebar` (studio): 264 px, paper-sunk, grouped links, active item = sunbeam fill + ink border.
+- `Sidebar` (studio): **264 px** (`--sidebar-w`), paper surface, 1 px right rule, grouped links (Content / Library / Governance), active item = paper-sunk fill + 3 px inset ink rule + `aria-current="page"`. It is persistent — sticky, full viewport height, independently scrolling — from **1024 px** (`lg`) up. It never shrinks into an icon rail: below 1024 px it is replaced by a sheet.
+- `StudioMobileMenu` (the studio sheet, below 1024 px): a sticky 64 px top bar with the wordmark and a 44 × 44 menu button, opening a full-width sheet docked under the bar (`max-height: calc(100dvh − 4rem)`, scrollable, `shadow-md`) over an ink-tinted scrim. It is a native `<details>` with Escape, outside-click and route-change dismissal, so it works without JavaScript. No focus trap is claimed for it; it is a disclosure, not a modal dialog.
 - `QuestionPalette`: numbered grid, states: current (ink border + cobalt), answered (sunbeam), unanswered (paper), flagged (dashed). Shown as a bottom sheet under 768 px.
 
 ### 9.8 Feedback
@@ -369,10 +459,12 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 
 ### 9.9 Data table (studio)
 
-- Sticky header (`paper-sunk`, `text-xs` uppercase), row height 52 px, hairline dividers, hover `paper-sunk`, selected row = sunbeam tint.
+- Header band: `paper-sunk`, `text-xs` uppercase. It is deliberately **not** sticky — the table's only scroll container is the wrapper's `overflow-x`, so a sticky header would never travel with the page; a real sticky header would need a vertical scroll container, which no studio table has.
 - Column types: text, badge, date (relative + absolute on hover), user, actions (icon buttons).
 - Sort indicators on sortable headers; pagination is cursor-based with "Load more" (not numbered pages).
-- Under 768 px the table becomes a card list; no horizontal scroll for primary content.
+- **Table → card switch at 768 px (`md`).** Below it every studio table is replaced by a `ul` card list (`md:hidden` list + `hidden md:block` table shell): one card per row, the record's primary line, its metadata as label/value pairs, and the row actions as full-size buttons. Above it the real `<table>` renders inside `.table-shell` (rounded, 1 px border, `overflow-x: auto` with `overscroll-behavior-x: contain`). Both representations are always in the DOM; the CSS decides which is visible, so nothing depends on JavaScript measuring the viewport.
+- Neither representation may cause horizontal scrolling for primary content. Column count is reduced before scrolling is allowed: the question **Type** column is hidden until `xl` (1280 px), and cell padding tightens below `lg` (1 rem inline at ≥ 1024 px, 0.75 rem below). The stretched table must fit its card at 768 px and at 1024 px — measured `scrollWidth === clientWidth`.
+- Never render the same row twice visibly, and never duplicate interactive controls inside both representations without unique labels: the hidden one must be truly hidden (`display: none`), so it is out of the accessibility tree and tab order.
 
 ### 9.10 Studio editors
 
@@ -468,6 +560,12 @@ Contrast is verified at implementation time with an automated check, but the **p
 8. A subject card renders in its subject colour purely from `--subject-*` variables, with no per-subject CSS.
 9. The print stylesheet produces a readable material page.
 10. A visual review against §2's principles rejects any gradient, glass panel, blurred shadow or rotation.
+11. Every page's horizontal padding comes from `--gutter` and its vertical rhythm from `--section-y`; no page hard-codes `px-4`, `py-24` or a similar fixed value at the shell level.
+12. `documentElement.scrollWidth − clientWidth` is 0 at 320, 360, 390, 414, 480, 768, 1024, 1280, 1440 and 1920 px on `/`, `/subjects`, the studio library and the studio editor.
+13. Below 768 px no studio table is visible and its card list is; above 768 px the reverse. The visible representation fits its container without horizontal scrolling.
+14. Display type uses the clamped `text-2xl`–`text-5xl` tokens; no component sets a viewport-relative font size or a per-page type media query.
+15. No `:hover` transform applies on a coarse pointer: the lift is inside `(hover: hover) and (pointer: fine)`, and `:active` press feedback still applies on touch.
+16. The studio sidebar is exactly `--sidebar-w` (264 px), persists from 1024 px, and is replaced below that by the sheet menu — never by a collapsed icon rail.
 
 ---
 

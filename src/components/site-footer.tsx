@@ -33,9 +33,9 @@ const COLUMNS = [
 export function SiteFooter(): React.JSX.Element {
   return (
     <footer className="border-t border-line-strong bg-paper">
-      <div className="mx-auto w-full max-w-[1240px] px-4 py-12 md:px-6 md:py-16 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="lg:pr-10">
+      <div className="shell py-12 md:py-16">
+        <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-2 lg:col-span-1 lg:pr-10">
             <p className="font-display text-base font-semibold tracking-tight">
               Exampify<span className="text-cobalt">.</span>
             </p>

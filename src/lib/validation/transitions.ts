@@ -28,7 +28,7 @@ export const transitionResultSchema = z.object({
 
 export const transitionEnvelopeSchema = z.object({ data: transitionResultSchema });
 
-/** The entities this iteration can move; assessments and questions follow. */
+/** Every entity with a lifecycle (`CONTENT_MODEL.md` §6); questions and assessments since Phase 3. */
 export const TRANSITION_ENTITIES = [
   "curricula",
   "levels",
@@ -36,6 +36,8 @@ export const TRANSITION_ENTITIES = [
   "chapters",
   "topics",
   "resources",
+  "questions",
+  "assessments",
 ] as const;
 
 export type TransitionEntity = (typeof TRANSITION_ENTITIES)[number];

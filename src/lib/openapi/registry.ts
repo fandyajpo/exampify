@@ -49,6 +49,24 @@ import {
   mediaUploadUrlSchema,
 } from "@/lib/validation/media";
 import { auditListQuerySchema, auditListSchema } from "@/lib/validation/audit";
+import {
+  questionCreateSchema,
+  questionEnvelopeSchema,
+  questionGateEnvelopeSchema,
+  questionListQuerySchema,
+  questionListSchema,
+  questionUpdateSchema,
+  questionValidateSchema,
+} from "@/lib/validation/questions";
+import {
+  assessmentAvailabilityEnvelopeSchema,
+  assessmentCreateSchema,
+  assessmentDetailEnvelopeSchema,
+  assessmentGateEnvelopeSchema,
+  assessmentListQuerySchema,
+  assessmentListSchema,
+  assessmentUpdateSchema,
+} from "@/lib/validation/assessments";
 import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
 
@@ -155,6 +173,18 @@ const TRANSITION_ROUTES: Operation[] = (
       summary: "Move a learning resource through its lifecycle",
       gate:
         "Publishing needs 200 characters of prose, a valid first block, ready media with alt text, parsing TeX, published in-scope assessments and related material, unique heading anchors and a payload under 256 kB (`CONTENT_MODEL.md` §4.6).",
+    },
+    {
+      entity: "questions",
+      summary: "Move a question through its lifecycle",
+      gate:
+        "Publishing needs a 10–4000 character stem, 60+ characters of explanation, 1–10 points, an answer key that matches the type, 2–8 options for choice types, at least two correct options for a multiple select, a published-or-in-review primary topic and ready media with alt text (`QUESTION_ENGINE.md` §10.1).",
+    },
+    {
+      entity: "assessments",
+      summary: "Move an assessment through its lifecycle",
+      gate:
+        "Publishing needs 1–60 distinct questions that are all published and in scope, a stored count equal to the item list, and a 60–10 800 second duration for `test`/`mock` (`QUESTION_ENGINE.md` §10.2).",
     },
   ] satisfies readonly { entity: string; summary: string; gate: string }[]
 ).map(({ entity, summary, gate }) => ({
@@ -309,6 +339,214 @@ const OVERVIEW_ROUTES: Operation[] = [
       { status: 200, description: "Counts, gaps and recent edits.", schema: studioOverviewEnvelopeSchema },
       error(401),
       error(403),
+    ],
+  },
+];
+
+/** `§7.4`: the question bank — authoring, cross-listing, the dry run and the repeatable copy. */
+const QUESTION_ROUTES: Operation[] = [
+  {
+    method: "get",
+    path: "/api/v1/studio/questions",
+    operationId: "list-questions",
+    summary: "List questions, drafts included",
+    description:
+      "`author`+. Filters `topicId`, `subjectId`, `type`, `difficulty`, `status`, `q` (stem) and `authorId`; `sort` is `updatedAt` (default) or `createdAt`, with `dir`; `limit` 1–50 and an opaque `cursor`. The list projection never selects `answerKey` or the explanation.",
+    tag: "studio",
+    request: questionListQuerySchema,
+    responses: [
+      { status: 200, description: "One page of questions.", schema: questionListSchema },
+      error(401),
+      error(403),
+      error(422),
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/questions",
+    operationId: "create-question",
+    summary: "Create a draft question",
+    description:
+      "`author`+. `topicId` is the primary topic; `secondaryTopicIds` cross-list it (`ADR-003`). A draft may start without options or a key — the editor fills them — but a sent key is checked against the options it names. A new question starts as a draft; `status` moves through the transition endpoint.",
+    tag: "studio",
+    request: questionCreateSchema,
+    responses: [
+      { status: 201, description: "Created, with its options and key.", schema: questionEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/questions/validate",
+    operationId: "validate-question",
+    summary: "Dry-run a question's publish gates",
+    description:
+      "`author`+. Runs the `QUESTION_ENGINE.md` §10.1 gates on an existing question and returns `{ passing, blocking[], warnings[] }` without writing. The same evaluation runs on the publish transition.",
+    tag: "studio",
+    request: questionValidateSchema,
+    responses: [
+      { status: 200, description: "The gate result.", schema: questionGateEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
+      error(422),
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/studio/questions/{id}",
+    operationId: "read-question",
+    summary: "Read a question with its key",
+    description:
+      "`author`+. The one question response that carries `answerKey`, the options' feedback and the cross-listings. `no-store`; never reachable by a student.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "The question in full.", schema: questionEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/studio/questions/{id}",
+    operationId: "update-question",
+    summary: "Update a question",
+    description:
+      "`author`+. Partial; `options` and `answerKey` are replaced whole when sent, and changing `type` requires a matching key in the same save. Requires `expectedUpdatedAt`; a mismatch is `409 CONTENT_CONFLICT`.",
+    tag: "studio",
+    request: questionUpdateSchema,
+    responses: [
+      { status: 200, description: "Updated.", schema: questionEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/v1/studio/questions/{id}",
+    operationId: "archive-question",
+    summary: "Archive a question",
+    description:
+      "`author`+. Archive only; nothing is deleted. Refused with `409 QUESTION_IN_USE` while a published assessment still lists the question.",
+    tag: "studio",
+    responses: [{ status: 204, description: "Archived." }, ...WRITE_ERRORS],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/questions/{id}/duplicate",
+    operationId: "duplicate-question",
+    summary: "Duplicate a question as a draft",
+    description:
+      "`author`+. Copies the stem, options, key and cross-listings; the copy starts as a draft with version 1.",
+    tag: "studio",
+    responses: [
+      { status: 201, description: "The draft copy.", schema: questionEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+];
+
+/** `§7.3`: the assessment composer, its dry run and the composer's live pool counts. */
+const ASSESSMENT_ROUTES: Operation[] = [
+  {
+    method: "get",
+    path: "/api/v1/studio/assessments",
+    operationId: "list-assessments",
+    summary: "List assessments, drafts included",
+    description:
+      "`author`+. Filters `topicId`, `subjectId`, `mode`, `status` and `q` (title); `sort` is `updatedAt` (default) or `createdAt`; `limit` 1–50 with an opaque `cursor`.",
+    tag: "studio",
+    request: assessmentListQuerySchema,
+    responses: [
+      { status: 200, description: "One page of assessments.", schema: assessmentListSchema },
+      error(401),
+      error(403),
+      error(422),
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/assessments",
+    operationId: "create-assessment",
+    summary: "Create a draft assessment",
+    description:
+      "`author`+. Scope is `topicId` (a topic's practice set) or `subjectId` alone (a course-wide test); every item must sit in that scope. `items` may be empty so the composer can start from the shell — the publish gate is what requires 1–60. `test`/`mock` need a 60–10 800 second duration; `practice` forbids one.",
+    tag: "studio",
+    request: assessmentCreateSchema,
+    responses: [
+      { status: 201, description: "Created, with its ordered items.", schema: assessmentDetailEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/studio/assessments/{id}",
+    operationId: "read-assessment",
+    summary: "Read an assessment with its items",
+    description:
+      "`author`+. The ordered items, each with its full question (the studio may see `answerKey`). `no-store`.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "The assessment in full.", schema: assessmentDetailEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/studio/assessments/{id}",
+    operationId: "update-assessment",
+    summary: "Update an assessment",
+    description:
+      "`author`+. `items` is replaced wholesale when sent, so order and `question_count` cannot drift. Requires `expectedUpdatedAt`; a mismatch is `409 CONTENT_CONFLICT`.",
+    tag: "studio",
+    request: assessmentUpdateSchema,
+    responses: [
+      { status: 200, description: "Updated.", schema: assessmentDetailEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/assessments/{id}/duplicate",
+    operationId: "duplicate-assessment",
+    summary: "Duplicate an assessment as a draft",
+    description: "`author`+. A draft copy whose items reference the same questions (`§7.3`).",
+    tag: "studio",
+    responses: [
+      { status: 201, description: "The draft copy.", schema: assessmentDetailEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/assessments/{id}/validate",
+    operationId: "validate-assessment",
+    summary: "Dry-run an assessment's publish gates",
+    description:
+      "`author`+. Runs the `QUESTION_ENGINE.md` §10.2 gates and returns `{ passing, blocking[], warnings[] }` without writing.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "The gate result.", schema: assessmentGateEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/studio/assessments/{id}/availability",
+    operationId: "assessment-availability",
+    summary: "Read the composer's live pool counts",
+    description:
+      "`author`+. Question totals for the assessment's scope, split by status, type and difficulty; one grouped query, so the composer can show what is left to add.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "Pool counts for the scope.", schema: assessmentAvailabilityEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
     ],
   },
 ];
@@ -831,6 +1069,8 @@ export const OPERATIONS: readonly Operation[] = [
     ],
   },
   ...RESOURCE_ROUTES,
+  ...QUESTION_ROUTES,
+  ...ASSESSMENT_ROUTES,
   ...MEDIA_ROUTES,
   ...AUDIT_ROUTES,
   ...OVERVIEW_ROUTES,

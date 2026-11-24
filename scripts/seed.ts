@@ -20,9 +20,14 @@ const client = createClient((authToken ? { url, authToken } : { url }) as Config
 type Row = Record<string, string | number | null>;
 
 async function upsert(table: string, row: Row): Promise<void> {
+  return upsertWhere(table, row, ["id"]);
+}
+
+/** Composite-key rows (`question_topics`, `resource_assessments`) have no `id` to conflict on. */
+async function upsertWhere(table: string, row: Row, conflictColumns: string[]): Promise<void> {
   const columns = Object.keys(row);
   const updates = columns
-    .filter((column) => column !== "id")
+    .filter((column) => !conflictColumns.includes(column))
     .map((column) => `${column} = excluded.${column}`)
     .join(", ");
 
@@ -30,7 +35,7 @@ async function upsert(table: string, row: Row): Promise<void> {
     sql:
       `INSERT INTO ${table} (${columns.join(", ")}) ` +
       `VALUES (${columns.map(() => "?").join(", ")}) ` +
-      `ON CONFLICT(id) DO UPDATE SET ${updates}`,
+      `ON CONFLICT(${conflictColumns.join(", ")}) DO ${updates ? `UPDATE SET ${updates}` : "NOTHING"}`,
     args: columns.map((column) => row[column] ?? null),
   });
 }
@@ -115,6 +120,88 @@ function showcaseBlocks(topicTitle: string): SeedBlock[] {
   ];
 }
 
+/**
+ * Ten questions per topic across the four types (`MVP_ROADMAP.md` Phase 3): three single
+ * choice, three multiple select, two true/false and two short answer. The stems are
+ * deliberately generic fixtures — real questions are content-operations work — but every
+ * one satisfies the §10.1 publish gates, so the seeded bank can be published, composed and
+ * graded without a fix-up pass.
+ */
+type SeedQuestion = {
+  type: "multiple_choice" | "multiple_select" | "true_false" | "short_answer";
+  stemMd: string;
+  options: { label: string; contentMd: string }[];
+  answerKey: Record<string, unknown>;
+};
+
+function sampleQuestions(topicTitle: string, objectives: string[]): SeedQuestion[] {
+  const idea = objectives[0] ?? topicTitle;
+  const secondIdea = objectives[1] ?? idea;
+
+  const choice = (index: number): SeedQuestion => ({
+    type: "multiple_choice",
+    stemMd: `Which statement about ${topicTitle.toLowerCase()} is correct? (sample ${index + 1})`,
+    options: [
+      { label: "A", contentMd: `${topicTitle} is unrelated to the syllabus objectives.` },
+      { label: "B", contentMd: idea },
+      { label: "C", contentMd: `Only exam papers mention ${topicTitle.toLowerCase()}.` },
+      { label: "D", contentMd: "None of the above." },
+    ],
+    answerKey: { v: 1, type: "multiple_choice", correct: "B" },
+  });
+
+  const multi = (index: number): SeedQuestion => ({
+    type: "multiple_select",
+    stemMd: `Which of these belong to ${topicTitle.toLowerCase()}? (sample ${index + 1})`,
+    options: [
+      { label: "A", contentMd: idea },
+      { label: "B", contentMd: secondIdea },
+      { label: "C", contentMd: "It has no definitions worth learning." },
+      { label: "D", contentMd: "It is only tested in another subject." },
+    ],
+    answerKey: { v: 1, type: "multiple_select", correct: ["A", "B"], scoring: "partial" },
+  });
+
+  const truth = (index: number): SeedQuestion => ({
+    type: "true_false",
+    stemMd: `True or false: ${idea}. (sample ${index + 1})`,
+    options: [
+      { label: "A", contentMd: "True" },
+      { label: "B", contentMd: "False" },
+    ],
+    answerKey: { v: 1, type: "true_false", correct: true },
+  });
+
+  const short = (index: number): SeedQuestion => ({
+    type: "short_answer",
+    stemMd: `In one phrase, name the idea this topic is built on. (sample ${index + 1})`,
+    options: [],
+    answerKey: { v: 1, type: "short_answer", accepted: [topicTitle.toLowerCase()] },
+  });
+
+  return [
+    choice(0),
+    choice(1),
+    choice(2),
+    multi(3),
+    multi(4),
+    multi(5),
+    truth(6),
+    truth(7),
+    short(8),
+    short(9),
+  ];
+}
+
+/** The explanation is part of the question row, not the key; this carries it out of the helper. */
+function explanationFor(topicTitle: string): string {
+  return (
+    `This sample question checks one idea from ${topicTitle}. A correct answer restates the ` +
+    `link between the term and its function, which is the same relationship the study notes ` +
+    `explain in prose.`
+  );
+}
+
 await client.execute("PRAGMA foreign_keys = ON");
 
 const curriculumId = id("curriculum", SEED_CURRICULUM.slug);
@@ -167,6 +254,8 @@ let chapterCount = 0;
 let topicCount = 0;
 let resourceCount = 0;
 let blockCount = 0;
+let questionCount = 0;
+let assessmentCount = 0;
 
 for (const [index, subject] of SEED_SUBJECTS.entries()) {
   const subjectId = id("subject", subject.levelSlug, subject.slug);
@@ -277,10 +366,139 @@ for (const [index, subject] of SEED_SUBJECTS.entries()) {
         });
       }
       blockCount += blocks.length;
+
+      const questions = sampleQuestions(topic.title, topic.objectives);
+      const questionIds: string[] = [];
+      for (const [questionIndex, question] of questions.entries()) {
+        const questionId = id(
+          "question",
+          subject.levelSlug,
+          subject.slug,
+          chapter.slug,
+          topic.slug,
+          String(questionIndex),
+        );
+        questionIds.push(questionId);
+
+        await upsert("questions", {
+          id: questionId,
+          topic_id: topicId,
+          question_type: question.type,
+          stem_md: question.stemMd,
+          media_id: null,
+          difficulty: questionIndex % 3 === 0 ? "easy" : questionIndex % 3 === 1 ? "medium" : "hard",
+          explanation_md: explanationFor(topic.title),
+          answer_key: JSON.stringify(question.answerKey),
+          points_x100: 100,
+          status: "published",
+          published_at: now,
+          version: 1,
+          created_by: null,
+          updated_by: null,
+          created_at: now,
+          updated_at: now,
+        });
+        questionCount += 1;
+
+        for (const [optionIndex, option] of question.options.entries()) {
+          await upsert("question_options", {
+            id: id(
+              "question-option",
+              subject.levelSlug,
+              subject.slug,
+              chapter.slug,
+              topic.slug,
+              String(questionIndex),
+              option.label,
+            ),
+            question_id: questionId,
+            label: option.label,
+            content_md: option.contentMd,
+            feedback_md: null,
+            position: optionIndex,
+          });
+        }
+
+        await upsertWhere(
+          "question_topics",
+          { question_id: questionId, topic_id: topicId, is_primary: 1 },
+          ["question_id", "topic_id"],
+        );
+      }
+
+      // One cross-listed question per chapter demonstrates `ADR-003`: the row appears under
+      // both topics without duplicating the question. The secondary listing is not the
+      // assessment's item, so this only affects topic-level filters.
+      const crossListTargets = chapter.topics.filter((candidate) => candidate.slug !== topic.slug);
+      const crossListTarget = crossListTargets[0];
+      if (crossListTarget) {
+        const targetTopicId = id(
+          "topic",
+          subject.levelSlug,
+          subject.slug,
+          chapter.slug,
+          crossListTarget.slug,
+        );
+        await upsertWhere(
+          "question_topics",
+          { question_id: questionIds[0]!, topic_id: targetTopicId, is_primary: 0 },
+          ["question_id", "topic_id"],
+        );
+      }
+
+      const assessmentId = id("assessment", subject.levelSlug, subject.slug, chapter.slug, topic.slug);
+      await upsert("assessments", {
+        id: assessmentId,
+        topic_id: topicId,
+        subject_id: subjectId,
+        scope_key: topicId,
+        slug: "practice-set",
+        title: `${topic.title} — practice`,
+        description_md: `Ten questions on ${topic.title.toLowerCase()}, in the order the study notes present them.`,
+        mode: "practice",
+        difficulty: "medium",
+        duration_seconds: null,
+        question_count: questionIds.length,
+        status: "published",
+        published_at: now,
+        version: 1,
+        created_by: null,
+        updated_by: null,
+        created_at: now,
+        updated_at: now,
+      });
+      assessmentCount += 1;
+
+      for (const [itemIndex, questionId] of questionIds.entries()) {
+        await upsert("assessment_items", {
+          id: id(
+            "assessment-item",
+            subject.levelSlug,
+            subject.slug,
+            chapter.slug,
+            topic.slug,
+            String(itemIndex),
+          ),
+          assessment_id: assessmentId,
+          question_id: questionId,
+          position: itemIndex,
+          points_x100_override: null,
+        });
+      }
+
+      // Linking the set to the topic's resource is what makes the seeded page a lesson; the
+      // format badge is derived from this row, never stored (`ADR-024`).
+      await upsertWhere(
+        "resource_assessments",
+        { resource_id: resourceId, assessment_id: assessmentId, placement: "end", position: 0 },
+        ["resource_id", "assessment_id"],
+      );
     }
   }
 }
 
 console.log(
-  `seed: ${subjectCount} subjects, ${chapterCount} chapters, ${topicCount} topics, ${resourceCount} resources, ${blockCount} blocks`,
+  `seed: ${subjectCount} subjects, ${chapterCount} chapters, ${topicCount} topics, ` +
+    `${resourceCount} resources, ${blockCount} blocks, ${questionCount} questions, ` +
+    `${assessmentCount} assessments`,
 );

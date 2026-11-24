@@ -63,7 +63,7 @@ export default async function CurriculumPage({
 
       <main id="main" className="flex-1">
         <section className="border-b border-line-strong bg-paper-accent">
-          <div className="mx-auto w-full max-w-[1240px] px-4 py-12 md:px-6 md:py-16 lg:px-8">
+          <div className="shell py-12 md:py-16">
             <Breadcrumbs items={trail} />
 
             <p className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
@@ -80,7 +80,7 @@ export default async function CurriculumPage({
           </div>
         </section>
 
-        <div className="mx-auto w-full max-w-[1240px] px-4 py-14 md:px-6 md:py-20 lg:px-8">
+        <div className="shell section-y">
           <ul className="grid gap-5 sm:grid-cols-2">
             {detail.levels.map((level) => (
               <li key={level.slug}>

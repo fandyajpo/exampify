@@ -8,13 +8,22 @@ import Link from "next/link";
 import { ContentStatusBadge } from "@/components/studio/content-status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { searchParam, type SearchParams } from "@/lib/search-params";
-import { listCurriculumTree, listSubjectsAdmin } from "@/lib/services/taxonomy-admin";
+import {
+  listCurriculumTree,
+  listSubjectsAdmin,
+} from "@/lib/services/taxonomy-admin";
 
 const PAGE_SIZE = 50;
 
 export const metadata = { title: "Subjects" };
 
-function subjectsHref({ levelId, cursor }: { levelId: string; cursor?: string }): string {
+function subjectsHref({
+  levelId,
+  cursor,
+}: {
+  levelId: string;
+  cursor?: string;
+}): string {
   const search = new URLSearchParams();
   if (levelId) search.set("levelId", levelId);
   if (cursor) search.set("cursor", cursor);
@@ -31,18 +40,21 @@ export default async function StudioSubjectsPage({
   const levelId = searchParam(params, "levelId");
   const cursor = searchParam(params, "cursor");
 
-  const [{ data: curricula }, { data: subjects, pagination }] = await Promise.all([
-    listCurriculumTree(),
-    listSubjectsAdmin({
-      limit: PAGE_SIZE,
-      ...(levelId ? { levelId } : {}),
-      ...(cursor ? { cursor } : {}),
-    }),
-  ]);
+  const [{ data: curricula }, { data: subjects, pagination }] =
+    await Promise.all([
+      listCurriculumTree(),
+      listSubjectsAdmin({
+        limit: PAGE_SIZE,
+        ...(levelId ? { levelId } : {}),
+        ...(cursor ? { cursor } : {}),
+      }),
+    ]);
 
   const levels = new Map(
     curricula.flatMap((curriculum) =>
-      curriculum.levels.map((level) => [level.id, `${curriculum.name} · ${level.name}`] as const),
+      curriculum.levels.map(
+        (level) => [level.id, `${curriculum.name} · ${level.name}`] as const,
+      ),
     ),
   );
 
@@ -50,8 +62,12 @@ export default async function StudioSubjectsPage({
     <>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-[62ch]">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Taxonomy</p>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">Subjects</h1>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
+            Taxonomy
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">
+            Subjects
+          </h1>
           <p className="mt-3 text-ink-2">
             {levelId && levels.has(levelId)
               ? `Filtered to ${levels.get(levelId)}.`
@@ -75,45 +91,88 @@ export default async function StudioSubjectsPage({
           description="Nothing is filed under this filter yet. Create the first subject from the API and it will appear here."
         />
       ) : (
-        <div className="mt-8 overflow-x-auto rounded-md border border-line bg-paper-raised shadow-sm">
-          <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">
-              Subjects with their level, status and position
-            </caption>
-            <thead>
-              <tr className="border-b border-line-strong text-left text-xs uppercase tracking-[0.1em] text-ink-3">
-                <th scope="col" className="px-4 py-3 font-medium">Subject</th>
-                <th scope="col" className="px-4 py-3 font-medium">Level</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Position</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjects.map((subject) => (
-                <tr key={subject.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/studio/subjects/${subject.id}`}
-                      className="font-medium text-ink underline-offset-4 hover:underline"
-                    >
-                      {subject.name}
-                    </Link>
-                    <p className="text-xs text-ink-3">{subject.slug}</p>
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">{levels.get(subject.educationLevelId) ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <ContentStatusBadge status={subject.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-ink-2">{subject.position}</td>
+        <>
+          <ul className="mt-8 flex flex-col gap-3 md:hidden">
+            {subjects.map((subject) => (
+              <li
+                key={subject.id}
+                className="rounded-md border border-line bg-paper-raised p-4 shadow-sm"
+              >
+                <Link
+                  href={`/studio/subjects/${subject.id}`}
+                  className="font-medium text-ink underline-offset-4 hover:underline"
+                >
+                  {subject.name}
+                </Link>
+                <p className="mt-1 text-xs text-ink-3">{subject.slug}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <ContentStatusBadge status={subject.status} />
+                  <span className="text-xs text-ink-3">
+                    {levels.get(subject.educationLevelId) ?? "—"}
+                  </span>
+                  <span className="ml-auto text-xs tabular-nums text-ink-2">
+                    Position {subject.position}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="table-shell mt-8 hidden md:block">
+            <table className="data-table">
+              <caption className="sr-only">
+                Subjects with their level, status and position
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className="font-medium">
+                    Subject
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Level
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Status
+                  </th>
+                  <th scope="col" className="text-right font-medium">
+                    Position
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {subjects.map((subject) => (
+                  <tr key={subject.id}>
+                    <td>
+                      <Link
+                        href={`/studio/subjects/${subject.id}`}
+                        className="font-medium text-ink underline-offset-4 hover:underline"
+                      >
+                        {subject.name}
+                      </Link>
+                      <p className="text-xs text-ink-3">{subject.slug}</p>
+                    </td>
+                    <td className="text-ink-2">
+                      {levels.get(subject.educationLevelId) ?? "—"}
+                    </td>
+                    <td>
+                      <ContentStatusBadge status={subject.status} />
+                    </td>
+                    <td className="text-right tabular-nums text-ink-2">
+                      {subject.position}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {cursor || pagination.nextCursor ? (
-        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-4 text-sm">
+        <nav
+          aria-label="Pagination"
+          className="mt-6 flex items-center justify-between gap-4 text-sm"
+        >
           {cursor ? (
             <Link
               href={subjectsHref({ levelId })}

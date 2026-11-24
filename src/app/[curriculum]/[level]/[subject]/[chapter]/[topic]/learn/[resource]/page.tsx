@@ -127,7 +127,7 @@ export default async function ResourcePage({
       <SiteHeader />
 
       <main id="main" className="flex-1">
-        <article className="mx-auto w-full max-w-[760px] px-4 py-12 md:px-6 md:py-16">
+        <article className="mx-auto w-full max-w-[760px] px-[var(--gutter)] py-12 md:py-16">
           <Breadcrumbs items={trail} />
 
           <header className="mt-6 border-b border-line-strong pb-8">

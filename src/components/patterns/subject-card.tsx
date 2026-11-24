@@ -43,17 +43,23 @@ export function SubjectCard({
         } as CSSProperties
       }
       className={cn(
-        "lift group flex h-full flex-col overflow-hidden rounded-md border border-line bg-paper-raised shadow-sm hover:border-line-strong hover:shadow-md",
+        "subject-card lift group flex h-full flex-col overflow-hidden rounded-md border border-line bg-paper-raised shadow-sm hover:border-line-strong hover:shadow-md",
         className,
       )}
     >
       <span aria-hidden="true" className="h-1 w-full bg-subject-ink" />
-      <div className="flex flex-1 flex-col gap-5 p-6">
+      <div className="subject-card-body">
         <span className="inline-flex size-10 items-center justify-center rounded-sm bg-subject-fill text-subject-ink">
           <SubjectIcon iconKey={iconKey} className="size-5" />
         </span>
         <div>
-          <p className="font-display text-lg font-semibold tracking-[-0.01em] text-ink">{name}</p>
+          {/* Long names clamp to two lines (DS-03); the full name stays in the link title. */}
+          <p
+            className="subject-card-title line-clamp-2 font-display font-semibold tracking-[-0.01em] text-ink"
+            title={name}
+          >
+            {name}
+          </p>
           <p className="mt-1 text-sm text-ink-3">
             {group} · {level}
           </p>

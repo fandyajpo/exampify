@@ -43,11 +43,24 @@
   --radius-xl: 24px;
 
   --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
-  --shadow-md: 0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
-  --shadow-lg: 0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
+  --shadow-md:
+    0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+  --shadow-lg:
+    0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
 
   --border-base: 1px;
   --border-bold: 3px;
+
+  /*
+   * Adaptive layout tokens. Gutters and section rhythm scale with the viewport instead of
+   * stepping at three breakpoints, so 360 px and 1600 px are both intentional.
+   * `--shell-max` is the public shell; studio content caps narrower beside the sidebar.
+   */
+  --gutter: clamp(1rem, 0.4rem + 2.4vw, 2rem);
+  --section-y: clamp(3rem, 2rem + 4vw, 5rem);
+  --shell-max: 1240px;
+  --studio-max: 1120px;
+  --sidebar-w: 264px;
 
   /*
    * Subject identity (DESIGN_SYSTEM.md §3.3). Components never name a subject colour:
@@ -65,16 +78,64 @@
   --subject-sunbeam: #8a6000;
   --subject-mauve: #8b3fa8;
 
-  --subject-cobalt-fill: color-mix(in srgb, var(--subject-cobalt) 14%, var(--paper));
-  --subject-lilac-fill: color-mix(in srgb, var(--subject-lilac) 14%, var(--paper));
-  --subject-leaf-fill: color-mix(in srgb, var(--subject-leaf) 14%, var(--paper));
-  --subject-lime-fill: color-mix(in srgb, var(--subject-lime) 14%, var(--paper));
-  --subject-blush-fill: color-mix(in srgb, var(--subject-blush) 14%, var(--paper));
-  --subject-amber-fill: color-mix(in srgb, var(--subject-amber) 14%, var(--paper));
+  --subject-cobalt-fill: color-mix(
+    in srgb,
+    var(--subject-cobalt) 14%,
+    var(--paper)
+  );
+  --subject-lilac-fill: color-mix(
+    in srgb,
+    var(--subject-lilac) 14%,
+    var(--paper)
+  );
+  --subject-leaf-fill: color-mix(
+    in srgb,
+    var(--subject-leaf) 14%,
+    var(--paper)
+  );
+  --subject-lime-fill: color-mix(
+    in srgb,
+    var(--subject-lime) 14%,
+    var(--paper)
+  );
+  --subject-blush-fill: color-mix(
+    in srgb,
+    var(--subject-blush) 14%,
+    var(--paper)
+  );
+  --subject-amber-fill: color-mix(
+    in srgb,
+    var(--subject-amber) 14%,
+    var(--paper)
+  );
   --subject-sky-fill: color-mix(in srgb, var(--subject-sky) 14%, var(--paper));
-  --subject-plum-fill: color-mix(in srgb, var(--subject-plum) 14%, var(--paper));
-  --subject-sunbeam-fill: color-mix(in srgb, var(--subject-sunbeam) 14%, var(--paper));
-  --subject-mauve-fill: color-mix(in srgb, var(--subject-mauve) 14%, var(--paper));
+  --subject-plum-fill: color-mix(
+    in srgb,
+    var(--subject-plum) 14%,
+    var(--paper)
+  );
+  --subject-sunbeam-fill: color-mix(
+    in srgb,
+    var(--subject-sunbeam) 14%,
+    var(--paper)
+  );
+  --subject-mauve-fill: color-mix(
+    in srgb,
+    var(--subject-mauve) 14%,
+    var(--paper)
+  );
+}
+
+/*
+ * Wide displays get more measure rather than more margin: the shell grows once there is room
+ * for a fourth card without shrinking the others, so a 1920 px screen is not a 1240 px page
+ * with 340 px of empty paper on each side.
+ */
+@media (min-width: 1536px) {
+  :root {
+    --shell-max: 1360px;
+    --studio-max: 1180px;
+  }
 }
 
 @theme inline {
@@ -107,8 +168,10 @@
   --radius-xl: 24px;
 
   --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
-  --shadow-md: 0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
-  --shadow-lg: 0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
+  --shadow-md:
+    0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+  --shadow-lg:
+    0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
 
   /* Set per subject on a wrapper; see :root above. */
   --color-subject-ink: var(--subject-ink, var(--subject-cobalt));
@@ -129,14 +192,161 @@
   --text-lg--line-height: 1.55;
   --text-xl: 1.5rem;
   --text-xl--line-height: 1.35;
-  --text-2xl: 1.875rem;
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem);
   --text-2xl--line-height: 1.2;
-  --text-3xl: 2.375rem;
+  --text-3xl: clamp(2rem, 1.55rem + 1.9vw, 2.375rem);
   --text-3xl--line-height: 1.1;
-  --text-4xl: 3rem;
+  --text-4xl: clamp(2.375rem, 1.6rem + 3.4vw, 3rem);
   --text-4xl--line-height: 1.02;
-  --text-5xl: 4rem;
+  --text-5xl: clamp(2.75rem, 1.6rem + 4.6vw, 4rem);
   --text-5xl--line-height: 0.98;
+}
+
+@layer components {
+  /*
+   * One page shell for every screen. Padding comes from `--gutter`, so the edges breathe on
+   * a 1600 px display and stay 16 px on a 320 px phone without per-page media queries.
+   */
+  .shell {
+    width: 100%;
+    max-width: var(--shell-max);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .shell-narrow {
+    width: 100%;
+    max-width: 820px;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .section-y {
+    padding-block: var(--section-y);
+  }
+
+  /*
+   * Intrinsic card grid: the column count follows the container, not the viewport, so the
+   * same list is correct inside the studio's narrower content column. `min(100%, 17rem)`
+   * prevents a single column from ever being narrower than its container.
+   */
+  .card-grid {
+    display: grid;
+    gap: clamp(0.875rem, 0.6rem + 0.7vw, 1.25rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+
+  /*
+   * Studio data tables (DESIGN_SYSTEM.md §9.9). The header is a plain sunk band: it is not
+   * sticky, because the only scroll container is the wrapper's `overflow-x`, so a sticky
+   * header could never travel with the page. Under `md` every studio table is replaced by a
+   * card list, and above it the visible columns are reduced until the table fits its card, so
+   * primary content never requires horizontal scrolling.
+   */
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-sm);
+  }
+
+  .data-table thead th {
+    background: var(--paper-sunk);
+    border-block-end: 1px solid var(--line-strong);
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .data-table tbody td {
+    padding: 0.875rem 0.75rem;
+    vertical-align: top;
+    border-block-end: 1px solid var(--line);
+  }
+
+  /* Above `lg` there is room for the roomier cell; on tablet the tighter padding is what
+     keeps all six question columns inside the card without a horizontal scroll. */
+  @media (min-width: 1024px) {
+    .data-table thead th {
+      padding-inline: 1rem;
+    }
+
+    .data-table tbody td {
+      padding-inline: 1rem;
+    }
+  }
+
+  .data-table tbody tr:last-child td {
+    border-block-end: 0;
+  }
+
+  .data-table tbody tr {
+    transition: background-color 120ms cubic-bezier(0.2, 0.6, 0.2, 1);
+  }
+
+  /*
+   * Row hover is a pointer affordance for the same reason the lift is (§5.4): on a touch
+   * screen `:hover` sticks after a tap and leaves one row looking selected.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .data-table tbody tr:hover {
+      background: var(--paper);
+    }
+  }
+
+  /*
+   * SubjectCard adapts to the width it is given, not to the viewport: the same card appears
+   * three-up on the homepage and two-up inside the studio's narrower column, so the title and
+   * padding respond to the card itself.
+   */
+  .subject-card {
+    container-type: inline-size;
+  }
+
+  .subject-card-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .subject-card-title {
+    font-size: var(--text-lg);
+  }
+
+  @media (min-width: 640px) {
+    .subject-card-body {
+      padding: 1.5rem;
+    }
+  }
+
+  /* A four-up card is narrow enough that 24 px padding and a 20 px title crowd it, so the
+     card steps down from its own width rather than from the viewport. */
+  @container (max-width: 18rem) {
+    .subject-card-body {
+      gap: 0.875rem;
+      padding: 1rem;
+    }
+
+    .subject-card-title {
+      font-size: var(--text-base);
+    }
+  }
+
+  .table-shell {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 @layer base {
@@ -144,12 +354,37 @@
     background: var(--paper);
     color: var(--ink);
     font-family: var(--font-sans);
+    /* Mobile Safari inflates text in landscape unless the size is pinned. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* Focus is always visible (DESIGN_SYSTEM.md §3.4, §10): 3 px cobalt, 2 px offset. */
-  :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  :where(
+    a,
+    button,
+    summary,
+    input,
+    select,
+    textarea,
+    [tabindex]
+  ):focus-visible {
     outline: 3px solid var(--cobalt);
     outline-offset: 2px;
+  }
+}
+
+/*
+ * Touch comfort: no 300 ms tap delay, and a neutral highlight instead of the platform blue
+ * on the large card links. Long-press callouts are left alone so text selection still works.
+ */
+@media (pointer: coarse) {
+  a,
+  button,
+  summary,
+  [role="tab"] {
+    -webkit-tap-highlight-color: rgb(20 18 16 / 0.08);
+    touch-action: manipulation;
   }
 }
 
@@ -175,13 +410,10 @@
  */
 @media (prefers-reduced-motion: no-preference) {
   .lift {
-    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-property:
+      transform, box-shadow, border-color, background-color, color;
     transition-duration: 120ms;
     transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
-  }
-
-  .lift:hover {
-    transform: translate(-1px, -1px);
   }
 
   .lift:active {
@@ -190,21 +422,32 @@
 }
 
 /*
- * Mobile menu entrance (DESIGN_SYSTEM.md §7 toast timing: 180 ms in). CSS rather than
- * Motion because the header menu is a native `<details>`: it must keep working with no
- * JavaScript. Only the opening animates — a closed `<details>` removes its content, so
- * there is nothing to exit. Reduced motion skips the keyframes entirely.
+ * Hover lift is a pointer-only affordance. On a touch screen `:hover` sticks after a tap,
+ * leaving rows raised and shifting neighbours, so the lift is gated on a real hover-capable
+ * pointer. Press feedback (`:active`) still fires everywhere.
+ */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .lift:hover {
+    transform: translate(-1px, -1px);
+  }
+}
+
+/*
+ * Menu entrance (DESIGN_SYSTEM.md §7 toast timing: 180 ms in). CSS rather than Motion
+ * because the menus are native `<details>`: they must keep working with no JavaScript. Only
+ * the opening animates — a closed `<details>` removes its content, so there is nothing to
+ * exit. Reduced motion skips the keyframes entirely.
  */
 @media (prefers-reduced-motion: no-preference) {
-  .motion-menu-panel {
-    animation: menu-panel-in 180ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
-    transform-origin: top right;
+  .motion-drawer {
+    animation: drawer-in 200ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+    transform-origin: top center;
   }
 
-  @keyframes menu-panel-in {
+  @keyframes drawer-in {
     from {
       opacity: 0;
-      transform: translateY(-4px);
+      transform: translateY(-6px);
     }
     to {
       opacity: 1;

@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }): React
   return (
     <div className="flex min-h-full flex-col bg-paper">
       <header className="border-b border-line">
-        <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center justify-between px-4 md:px-6 lg:px-8">
+        <div className="shell flex h-16 items-center justify-between">
           <Link
             href="/"
             className="font-display text-lg font-semibold tracking-tight text-ink"
@@ -32,7 +32,10 @@ export default function AuthLayout({ children }: { children: ReactNode }): React
         </div>
       </header>
 
-      <main id="main" className="flex flex-1 justify-center px-4 py-12 md:py-20">
+      <main
+        id="main"
+        className="flex flex-1 justify-center px-[var(--gutter)] py-10 md:py-20"
+      >
         <div className="w-full max-w-[440px]">{children}</div>
       </main>
     </div>

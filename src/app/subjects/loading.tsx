@@ -4,7 +4,7 @@
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div aria-busy="true" aria-live="polite" className="mx-auto w-full max-w-[820px] px-4 py-16 md:px-6">
+    <div aria-busy="true" aria-live="polite" className="shell-narrow py-16">
       <span className="sr-only">Loading</span>
       <div className="h-3 w-24 animate-pulse rounded-xs bg-paper-sunk" />
       <div className="mt-6 h-9 w-3/4 animate-pulse rounded-sm bg-paper-sunk" />

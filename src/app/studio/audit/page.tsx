@@ -41,14 +41,25 @@ function pillClass(active: boolean): string {
 
 const FILTERS = [
   { value: "", label: "All" },
-  ...AUDIT_ENTITY_TYPES.map((type) => ({ value: type, label: ENTITY_LABELS[type] })),
+  ...AUDIT_ENTITY_TYPES.map((type) => ({
+    value: type,
+    label: ENTITY_LABELS[type],
+  })),
 ];
 
-function isEntityType(value: string): value is (typeof AUDIT_ENTITY_TYPES)[number] {
+function isEntityType(
+  value: string,
+): value is (typeof AUDIT_ENTITY_TYPES)[number] {
   return (AUDIT_ENTITY_TYPES as readonly string[]).includes(value);
 }
 
-function auditHref({ entityType, cursor }: { entityType: string; cursor?: string }): string {
+function auditHref({
+  entityType,
+  cursor,
+}: {
+  entityType: string;
+  cursor?: string;
+}): string {
   const search = new URLSearchParams();
   if (entityType) search.set("entityType", entityType);
   if (cursor) search.set("cursor", cursor);
@@ -65,7 +76,9 @@ function formatValue(value: unknown): string {
 function describeMetadata(metadata: Record<string, unknown>): string {
   const entries = Object.entries(metadata);
   if (entries.length === 0) return "—";
-  return entries.map(([key, value]) => `${key}: ${formatValue(value)}`).join(" · ");
+  return entries
+    .map(([key, value]) => `${key}: ${formatValue(value)}`)
+    .join(" · ");
 }
 
 export default async function StudioAuditPage({
@@ -75,7 +88,8 @@ export default async function StudioAuditPage({
 }): Promise<React.JSX.Element> {
   const actor = await getActor();
   if (!actor) notFound();
-  if (!can(actor, "audit:read:all") && !can(actor, "audit:read:own")) notFound();
+  if (!can(actor, "audit:read:all") && !can(actor, "audit:read:own"))
+    notFound();
 
   const params = await searchParams;
   const rawEntityType = searchParam(params, "entityType");
@@ -93,8 +107,12 @@ export default async function StudioAuditPage({
   return (
     <>
       <header className="max-w-[62ch]">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Studio</p>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">Audit log</h1>
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
+          Studio
+        </p>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.02em]">
+          Audit log
+        </h1>
         <p className="mt-3 text-ink-2">
           {readsEverything
             ? "Every recorded change, newest first. Times are UTC."
@@ -102,7 +120,10 @@ export default async function StudioAuditPage({
         </p>
       </header>
 
-      <nav aria-label="Filter by entity" className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+      <nav
+        aria-label="Filter by entity"
+        className="mt-6 flex flex-wrap items-center gap-2 text-sm"
+      >
         {FILTERS.map((filter) => {
           const active = entityType === filter.value;
           return (
@@ -129,58 +150,125 @@ export default async function StudioAuditPage({
           }
         />
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-md border border-line bg-paper-raised shadow-sm">
-          <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">Audit entries with actor, action, entity and details</caption>
-            <thead>
-              <tr className="border-b border-line-strong text-left text-xs uppercase tracking-[0.1em] text-ink-3">
-                <th scope="col" className="px-4 py-3 font-medium">When</th>
-                <th scope="col" className="px-4 py-3 font-medium">Actor</th>
-                <th scope="col" className="px-4 py-3 font-medium">Action</th>
-                <th scope="col" className="px-4 py-3 font-medium">Entity</th>
-                <th scope="col" className="px-4 py-3 font-medium">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr key={entry.id} className="border-b border-line align-top last:border-0">
-                  <td className="whitespace-nowrap px-4 py-3 tabular-nums text-ink-2">
-                    <time dateTime={entry.createdAt}>
-                      {formatUtcDateTime(entry.createdAt)}
-                    </time>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {entry.actorId ? (
-                      <span className="font-mono text-xs text-ink-2" title={entry.actorId}>
-                        {entry.actorId.slice(0, 8)}
-                      </span>
-                    ) : (
-                      <span className="text-ink-3">system</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span className="font-mono text-xs text-ink">{entry.action}</span>
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">
-                    <span className="capitalize">{entry.entityType}</span>
-                    {entry.entityId ? (
-                      <span className="ml-1 font-mono text-xs text-ink-3" title={entry.entityId}>
-                        {entry.entityId.slice(0, 8)}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-ink-2">
-                    {describeMetadata(entry.metadata)}
-                  </td>
+        <>
+          <ul className="mt-6 flex flex-col gap-3 md:hidden">
+            {entries.map((entry) => (
+              <li
+                key={entry.id}
+                className="rounded-md border border-line bg-paper-raised p-4 shadow-sm"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-mono text-xs text-ink">
+                    {entry.action}
+                  </span>
+                  <span className="capitalize text-ink-2">
+                    {entry.entityType}
+                  </span>
+                  <time
+                    dateTime={entry.createdAt}
+                    className="ml-auto text-xs tabular-nums text-ink-3"
+                  >
+                    {formatUtcDateTime(entry.createdAt)}
+                  </time>
+                </div>
+                <p className="mt-2 text-xs text-ink-2">
+                  {describeMetadata(entry.metadata)}
+                </p>
+                <p className="mt-2 text-xs text-ink-3">
+                  {entry.actorId ? (
+                    <span className="font-mono">
+                      {entry.actorId.slice(0, 8)}
+                    </span>
+                  ) : (
+                    "system"
+                  )}
+                  {entry.entityId ? (
+                    <span className="font-mono">
+                      {" "}
+                      · {entry.entityId.slice(0, 8)}
+                    </span>
+                  ) : null}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          <div className="table-shell mt-6 hidden md:block">
+            <table className="data-table">
+              <caption className="sr-only">
+                Audit entries with actor, action, entity and details
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className="font-medium">
+                    When
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Actor
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Action
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Entity
+                  </th>
+                  <th scope="col" className="font-medium">
+                    Details
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {entries.map((entry) => (
+                  <tr key={entry.id}>
+                    <td className="whitespace-nowrap tabular-nums text-ink-2">
+                      <time dateTime={entry.createdAt}>
+                        {formatUtcDateTime(entry.createdAt)}
+                      </time>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {entry.actorId ? (
+                        <span
+                          className="font-mono text-xs text-ink-2"
+                          title={entry.actorId}
+                        >
+                          {entry.actorId.slice(0, 8)}
+                        </span>
+                      ) : (
+                        <span className="text-ink-3">system</span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <span className="font-mono text-xs text-ink">
+                        {entry.action}
+                      </span>
+                    </td>
+                    <td className="text-ink-2">
+                      <span className="capitalize">{entry.entityType}</span>
+                      {entry.entityId ? (
+                        <span
+                          className="ml-1 font-mono text-xs text-ink-3"
+                          title={entry.entityId}
+                        >
+                          {entry.entityId.slice(0, 8)}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="text-xs text-ink-2">
+                      {describeMetadata(entry.metadata)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {cursor || nextCursor ? (
-        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-4 text-sm">
+        <nav
+          aria-label="Pagination"
+          className="mt-6 flex items-center justify-between gap-4 text-sm"
+        >
           {cursor ? (
             <Link
               href={auditHref({ entityType })}

@@ -94,6 +94,21 @@ export default async function StudioTopicPage({
         </ol>
       )}
 
+      <div className="mt-6 flex flex-wrap gap-5 text-sm">
+        <Link
+          href={`/studio/questions?topicId=${topic.id}`}
+          className="text-ink-2 underline-offset-4 hover:text-ink hover:underline"
+        >
+          Questions filed here →
+        </Link>
+        <Link
+          href={`/studio/assessments?topicId=${topic.id}`}
+          className="text-ink-2 underline-offset-4 hover:text-ink hover:underline"
+        >
+          Assessments for this topic →
+        </Link>
+      </div>
+
       <Disclosure label="New resource" className="mt-8">
         <ResourceForm topicId={topic.id} />
       </Disclosure>

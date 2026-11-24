@@ -28,7 +28,7 @@ export default async function SubjectsPage(): Promise<React.JSX.Element> {
 
       <main id="main" className="flex-1">
         <section className="border-b border-line-strong bg-paper-accent">
-          <div className="mx-auto w-full max-w-[1240px] px-4 py-12 md:px-6 md:py-16 lg:px-8">
+          <div className="shell py-12 md:py-16">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
               Catalogue
             </p>
@@ -43,7 +43,7 @@ export default async function SubjectsPage(): Promise<React.JSX.Element> {
           </div>
         </section>
 
-        <div className="mx-auto w-full max-w-[1240px] px-4 py-14 md:px-6 md:py-20 lg:px-8">
+        <div className="shell section-y">
           {levels.map((level) => (
             <section key={level.levelSlug} aria-labelledby={`level-${level.levelSlug}`} className="mb-16 last:mb-0">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line-strong pb-3">
@@ -59,7 +59,7 @@ export default async function SubjectsPage(): Promise<React.JSX.Element> {
               </div>
 
               {level.subjects.length > 0 ? (
-                <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="card-grid mt-8">
                   {level.subjects.map((subject) => (
                     <li key={subject.id}>
                       <SubjectCard

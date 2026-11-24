@@ -32,7 +32,7 @@ export default function DesignPage(): React.JSX.Element {
     <>
       <SiteHeader />
 
-      <main id="main" className="mx-auto w-full max-w-[1000px] flex-1 px-4 py-12 md:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1000px] flex-1 px-[var(--gutter)] py-12">
         <h1 className="font-display text-4xl font-semibold tracking-[-0.03em]">Design primitives</h1>
         <p className="mt-3 max-w-[60ch] text-ink-2">
           Every primitive Phase 1 ships, rendered against the real tokens. Development-only.

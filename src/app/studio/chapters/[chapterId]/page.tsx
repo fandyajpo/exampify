@@ -38,14 +38,23 @@ export default async function StudioChapterPage({
       </Link>
 
       <header className="mt-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-3xl font-semibold tracking-[-0.02em]">{chapter.title}</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.02em]">
+          {chapter.title}
+        </h1>
         <ContentStatusBadge status={chapter.status} />
         <span className="text-sm text-ink-3">{chapter.slug}</span>
       </header>
-      {chapter.summary ? <p className="mt-3 max-w-[62ch] text-ink-2">{chapter.summary}</p> : null}
+      {chapter.summary ? (
+        <p className="mt-3 max-w-[62ch] text-ink-2">{chapter.summary}</p>
+      ) : null}
 
       <div className="mt-5">
-        <TransitionControls entity="chapters" id={chapter.id} status={chapter.status} role={actor.role} />
+        <TransitionControls
+          entity="chapters"
+          id={chapter.id}
+          status={chapter.status}
+          role={actor.role}
+        />
       </div>
 
       <Disclosure label="Edit chapter" className="mt-6">
@@ -53,7 +62,9 @@ export default async function StudioChapterPage({
       </Disclosure>
 
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2 border-b border-line-strong pb-3">
-        <h2 className="font-display text-xl font-semibold tracking-[-0.015em]">Topics</h2>
+        <h2 className="font-display text-xl font-semibold tracking-[-0.015em]">
+          Topics
+        </h2>
         <p className="text-sm text-ink-3">
           {topics.length} {topics.length === 1 ? "topic" : "topics"}
         </p>
@@ -68,20 +79,34 @@ export default async function StudioChapterPage({
       ) : (
         <div className="mt-6 overflow-x-auto rounded-md border border-line bg-paper-raised shadow-sm">
           <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">Topics with their status, position and length</caption>
+            <caption className="sr-only">
+              Topics with their status, position and length
+            </caption>
             <thead>
               <tr className="border-b border-line-strong text-left text-xs uppercase tracking-[0.1em] text-ink-3">
-                <th scope="col" className="px-4 py-3 text-right font-medium">#</th>
-                <th scope="col" className="px-4 py-3 font-medium">Topic</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Minutes</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Objectives</th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">
+                  #
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Topic
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">
+                  Minutes
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">
+                  Objectives
+                </th>
               </tr>
             </thead>
             <tbody>
               {topics.map((topic) => (
-                <tr key={topic.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 text-right tabular-nums text-ink-3">{topic.position}</td>
+                <tr key={topic.id}>
+                  <td className="px-4 py-3 text-right tabular-nums text-ink-3">
+                    {topic.position}
+                  </td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/studio/topics/${topic.id}`}

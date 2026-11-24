@@ -9,6 +9,8 @@ import type { Database } from "@/lib/db/schema";
 import { HttpError, notFound, type ErrorDetail } from "@/lib/http/errors";
 import { uuidv7 } from "@/lib/ids";
 import type { Actor } from "@/lib/rbac";
+import { loadAssessmentGates } from "@/lib/services/assessments-admin";
+import { loadQuestionGates } from "@/lib/services/questions-admin";
 import { loadResourceGates } from "@/lib/services/resources-admin";
 import type { ContentStatus } from "@/lib/validation/taxonomy";
 import type { TransitionEntity, TransitionInput, TransitionResult } from "@/lib/validation/transitions";
@@ -38,6 +40,8 @@ const ENTITY_NAME = {
   chapters: "chapter",
   topics: "topic",
   resources: "resource",
+  questions: "question",
+  assessments: "assessment",
 } as const satisfies Record<TransitionEntity, AuditEntityType>;
 
 type LoadedRow = {
@@ -86,6 +90,24 @@ async function loadRow(trx: Trx, entity: TransitionEntity, id: string): Promise<
   if (entity === "resources") {
     const row = await trx
       .selectFrom("learning_resources")
+      .select(["status", "published_at", "created_by"])
+      .where("id", "=", id)
+      .executeTakeFirst();
+    return row ? { status: row.status, publishedAt: row.published_at, ownerId: row.created_by } : null;
+  }
+
+  if (entity === "questions") {
+    const row = await trx
+      .selectFrom("questions")
+      .select(["status", "published_at", "created_by"])
+      .where("id", "=", id)
+      .executeTakeFirst();
+    return row ? { status: row.status, publishedAt: row.published_at, ownerId: row.created_by } : null;
+  }
+
+  if (entity === "assessments") {
+    const row = await trx
+      .selectFrom("assessments")
       .select(["status", "published_at", "created_by"])
       .where("id", "=", id)
       .executeTakeFirst();
@@ -157,6 +179,37 @@ async function writeStatus(
     return;
   }
 
+  if (entity === "questions") {
+    // A publish bumps `version`; attempt items snapshot it (`QUESTION_ENGINE.md` §8).
+    await trx
+      .updateTable("questions")
+      .set({
+        status,
+        published_at: publishedAt,
+        updated_at: now,
+        updated_by: actor.id,
+        ...(status === "published" ? { version: sql<number>`version + 1` } : {}),
+      })
+      .where("id", "=", id)
+      .execute();
+    return;
+  }
+
+  if (entity === "assessments") {
+    await trx
+      .updateTable("assessments")
+      .set({
+        status,
+        published_at: publishedAt,
+        updated_at: now,
+        updated_by: actor.id,
+        ...(status === "published" ? { version: sql<number>`version + 1` } : {}),
+      })
+      .where("id", "=", id)
+      .execute();
+    return;
+  }
+
   await trx
     .updateTable("topics")
     .set({ status, published_at: publishedAt, updated_at: now, updated_by: actor.id })
@@ -199,6 +252,20 @@ async function assertPublishGate(trx: Trx, entity: TransitionEntity, id: string)
   if (entity === "resources") {
     const gates = await loadResourceGates(trx, id);
     if (!gates) throw notFound("resource");
+    if (!gates.passing) throw gateFailed(gates.blocking);
+    return;
+  }
+
+  if (entity === "questions") {
+    const gates = await loadQuestionGates(trx, id);
+    if (!gates) throw notFound("question");
+    if (!gates.passing) throw gateFailed(gates.blocking);
+    return;
+  }
+
+  if (entity === "assessments") {
+    const gates = await loadAssessmentGates(trx, id);
+    if (!gates) throw notFound("assessment");
     if (!gates.passing) throw gateFailed(gates.blocking);
     return;
   }
@@ -324,7 +391,9 @@ export async function transitionEntity(
       entity === "subjects" ||
       entity === "chapters" ||
       entity === "topics" ||
-      entity === "resources";
+      entity === "resources" ||
+      entity === "questions" ||
+      entity === "assessments";
     const publishedAt = hasPublishedAt && edge.to === "published" ? now : null;
 
     await writeStatus(trx, entity, id, edge.to, publishedAt, actor, now);
@@ -345,7 +414,11 @@ export async function transitionEntity(
       trx,
     );
 
-    if (edge.search) await enqueueSearchEvent(trx, name, id, edge.search, now);
+    // Questions are not indexed at all (`QUESTION_ENGINE.md` §12), so a publish writes no
+    // search event for them even though the edge carries one.
+    if (edge.search && entity !== "questions") {
+      await enqueueSearchEvent(trx, name, id, edge.search, now);
+    }
 
     return {
       entity,
@@ -355,7 +428,7 @@ export async function transitionEntity(
       // No tag cache is attached to these pages yet (they revalidate on an interval), and
       // the search worker has not been built: both flags report what actually happened.
       cacheInvalidated: false,
-      searchEnqueued: edge.search !== null,
+      searchEnqueued: edge.search !== null && entity !== "questions",
     };
   });
 }

@@ -67,19 +67,12 @@ export default async function HomePage(): Promise<React.JSX.Element> {
 
   return (
     <>
-      <a
-        href="#main"
-        className="sr-only rounded-sm bg-paper-raised px-4 py-3 font-medium shadow-md focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
-      >
-        Skip to content
-      </a>
-
       <SiteHeader />
 
       <main id="main" className="flex-1">
         {/* Hero */}
         <section className="border-b border-line-strong bg-paper-accent">
-          <div className="mx-auto grid w-full max-w-[1240px] items-center gap-12 px-4 py-14 md:px-6 md:py-20 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:py-24">
+          <div className="shell grid items-center gap-12 py-14 md:py-20 lg:grid-cols-12 lg:gap-10 lg:py-24">
             <div className="lg:col-span-7">
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
                 Study material · Lessons · Practice tests
@@ -126,7 +119,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
 
         {/* Popular subjects */}
         <section aria-labelledby="popular-subjects" className="bg-paper">
-          <div className="mx-auto w-full max-w-[1240px] px-4 py-14 md:px-6 md:py-20 lg:px-8">
+          <div className="shell section-y">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2
@@ -149,7 +142,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             </div>
 
             {popularSubjects.length > 0 ? (
-              <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="card-grid mt-10">
                 {popularSubjects.map((subject) => (
                   <li key={subject.href}>
                     <SubjectCard
@@ -173,7 +166,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
 
         {/* How it works */}
         <section aria-labelledby="how-it-works" className="border-y border-line bg-paper-sunk">
-          <div className="mx-auto w-full max-w-[1240px] px-4 py-14 md:px-6 md:py-20 lg:px-8">
+          <div className="shell section-y">
             <h2 id="how-it-works" className="font-display text-2xl font-semibold tracking-[-0.015em]">
               Read, practise, then fix what is weak
             </h2>
@@ -193,7 +186,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
 
         {/* Browse by subject group */}
         <section aria-labelledby="browse-by-group" className="bg-paper">
-          <div className="mx-auto w-full max-w-[1240px] px-4 py-14 md:px-6 md:py-20 lg:px-8">
+          <div className="shell section-y">
             <h2
               id="browse-by-group"
               className="font-display text-2xl font-semibold tracking-[-0.015em]"

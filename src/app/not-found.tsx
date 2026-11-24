@@ -16,7 +16,7 @@ export default function NotFound(): React.JSX.Element {
       <SiteHeader />
 
       <main id="main" className="flex-1">
-        <div className="mx-auto w-full max-w-[820px] px-4 py-20 md:px-6 md:py-28">
+        <div className="shell-narrow py-20 md:py-28">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">404</p>
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em] md:text-5xl">
             That page is not here

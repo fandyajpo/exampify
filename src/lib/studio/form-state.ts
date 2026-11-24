@@ -17,7 +17,13 @@ export type StudioFormField =
   | "subtitle"
   | "difficulty"
   | "learningObjectives"
-  | "estimatedMinutes";
+  | "estimatedMinutes"
+  | "type"
+  | "stemMd"
+  | "mode"
+  | "durationSeconds"
+  | "topicId"
+  | "subjectId";
 
 export type StudioFormState =
   | { status: "idle" }
