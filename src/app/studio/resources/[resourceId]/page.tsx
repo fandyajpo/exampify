@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Disclosure } from "@/components/motion/disclosure";
+import { AssessmentLinks } from "@/components/studio/assessment-links";
 import { ContentStatusBadge } from "@/components/studio/content-status-badge";
 import { ResourceEditor } from "@/components/studio/resource-editor";
 import { ResourceForm } from "@/components/studio/resource-form";
@@ -14,7 +15,8 @@ import { TransitionControls } from "@/components/studio/transition-controls";
 import { Button } from "@/components/ui/button";
 import { requireActor } from "@/lib/auth/actor";
 import { duplicateResourceAction } from "@/lib/studio/actions";
-import { getResourceAdmin } from "@/lib/services/resources-admin";
+import { getMediaMany } from "@/lib/services/media-admin";
+import { getResourceAdmin, getResourceAssessments } from "@/lib/services/resources-admin";
 
 export const metadata = { title: "Resource" };
 
@@ -26,6 +28,19 @@ export default async function StudioResourcePage({
   const { resourceId } = await params;
   const [resource, actor] = await Promise.all([getResourceAdmin(resourceId), requireActor()]);
   if (!resource) notFound();
+
+  // The blocks store a media id only; the editor shows the chosen asset's thumbnail and alt
+  // text from this map instead of asking for each one separately.
+  const [media, assessments] = await Promise.all([
+    getMediaMany(
+      resource.blocks.flatMap((block) => {
+        if (block.kind !== "image" && block.kind !== "download") return [];
+        const mediaId = block.payload.mediaId;
+        return typeof mediaId === "string" ? [mediaId] : [];
+      }),
+    ),
+    getResourceAssessments(resource.id),
+  ]);
 
   return (
     <>
@@ -67,7 +82,15 @@ export default async function StudioResourcePage({
       </div>
 
       <div className="mt-8">
-        <ResourceEditor resourceId={resource.id} blocks={resource.blocks} />
+        <ResourceEditor resourceId={resource.id} blocks={resource.blocks} media={media} />
+      </div>
+
+      <div className="mt-8">
+        <AssessmentLinks
+          resourceId={resource.id}
+          linked={assessments.linked}
+          available={assessments.available}
+        />
       </div>
 
       <Disclosure label="Edit metadata" className="mt-10">

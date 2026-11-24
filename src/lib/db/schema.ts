@@ -173,6 +173,7 @@ export interface MediaAssetsTable {
   uploaded_by: string | null;
   created_at: number;
   updated_at: number;
+  deleted_at: number | null;
 }
 
 export interface ContentBlocksTable {
@@ -200,6 +201,16 @@ export interface ResourceAssessmentsTable {
   assessment_id: string;
   placement: "inline" | "end" | "optional";
   position: number;
+}
+
+/** Changed public paths (`DATABASE_SCHEMA.md` §10.5); `source_path` may be a subtree prefix. */
+export interface RedirectsTable {
+  id: string;
+  source_path: string;
+  target_path: string;
+  status_code: number;
+  reason: "slug_change" | "topic_moved" | "manual" | null;
+  created_at: number;
 }
 
 export interface UsageEventsTable {
@@ -260,6 +271,7 @@ export interface Database {
   resource_assessments: ResourceAssessmentsTable;
   search_events: SearchEventsTable;
   media_assets: MediaAssetsTable;
+  redirects: RedirectsTable;
   usage_events: UsageEventsTable;
   email_suppressions: EmailSuppressionsTable;
   audit_logs: AuditLogsTable;

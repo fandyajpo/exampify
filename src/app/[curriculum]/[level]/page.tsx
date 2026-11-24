@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
 import { SubjectCard } from "@/components/patterns/subject-card";
@@ -15,6 +15,7 @@ import { breadcrumbTrail } from "@/lib/seo/breadcrumbs";
 import { breadcrumbList, pageGraph } from "@/lib/seo/jsonld";
 import { buildMetadata, description, titles } from "@/lib/seo/metadata";
 import { getLevelDetail, url } from "@/lib/services/content";
+import { resolveRedirect } from "@/lib/services/redirects";
 
 export const revalidate = 300;
 
@@ -46,7 +47,11 @@ export default async function LevelPage({
 }): Promise<React.JSX.Element> {
   const { curriculum, level } = await params;
   const detail = await getLevel(curriculum, level);
-  if (!detail) notFound();
+  if (!detail) {
+    const moved = await resolveRedirect(url.level(curriculum, level));
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
 
   const trail = breadcrumbTrail({
     curriculum: { slug: detail.curriculum.slug, name: detail.curriculum.name },

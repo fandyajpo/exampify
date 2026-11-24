@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { MarkdownEditor } from "@/components/studio/markdown-editor";
+import { MediaPicker } from "@/components/studio/media-picker";
 import { Button } from "@/components/ui/button";
-import { Select, Textarea } from "@/components/ui/input";
+import { Input, Select, Textarea } from "@/components/ui/input";
+import type { MediaDto } from "@/lib/validation/media";
 import type { BlockDto, GateResult } from "@/lib/validation/resources";
 
 /**
@@ -80,12 +82,164 @@ const STATUS_TEXT: Record<BlockStatus, string> = {
   error: "Not saved",
 };
 
+const asRecord = (payload: Record<string, unknown>) => payload as {
+  mediaId?: unknown;
+  caption?: unknown;
+  label?: unknown;
+  width?: unknown;
+  height?: unknown;
+};
+
+/** The picked asset for a block, or `null` while the block points at nothing (or a deleted id). */
+function assetFor(block: DraftBlock, media: Record<string, MediaDto>): MediaDto | null {
+  const mediaId = asRecord(block.payload).mediaId;
+  return typeof mediaId === "string" ? (media[mediaId] ?? null) : null;
+}
+
+/**
+ * The `image` and `download` payloads are picked from the library, never typed: a media id is a
+ * UUID and the header dimensions are what reserve the layout, so the fields below are the only
+ * free parts of the contract.
+ */
+function ImageBlockFields({
+  block,
+  asset,
+  onChange,
+}: {
+  block: DraftBlock;
+  asset: MediaDto | null;
+  onChange: (payload: Record<string, unknown>) => void;
+}): React.JSX.Element {
+  const payload = asRecord(block.payload);
+  const caption = typeof payload.caption === "string" ? payload.caption : "";
+  const width = typeof payload.width === "number" ? payload.width : 1200;
+  const height = typeof payload.height === "number" ? payload.height : 800;
+
+  const setDimension = (key: "width" | "height", raw: string): void => {
+    const next = Math.round(Number(raw));
+    if (!Number.isFinite(next) || next < 1) return;
+    onChange({ ...block.payload, v: 1, [key]: Math.min(4096, next) });
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <MediaPicker
+        purpose="image"
+        selected={asset}
+        onSelect={(picked) =>
+          onChange({
+            v: 1,
+            mediaId: picked.id,
+            width: picked.width ?? 1200,
+            height: picked.height ?? 800,
+            ...(caption ? { caption } : {}),
+          })
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label htmlFor={`${block.id}-caption`} className="text-sm font-medium text-ink">
+            Caption
+          </label>
+          <Input
+            id={`${block.id}-caption`}
+            value={caption}
+            maxLength={240}
+            placeholder="Optional, shown under the image"
+            className="mt-1 h-9"
+            onChange={(event) => {
+              const next = event.target.value;
+              const rest = { ...block.payload };
+              delete rest.caption;
+              onChange(next ? { ...rest, v: 1, caption: next } : rest);
+            }}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${block.id}-width`} className="text-sm font-medium text-ink">
+            Width
+          </label>
+          <Input
+            id={`${block.id}-width`}
+            type="number"
+            min={1}
+            max={4096}
+            defaultValue={width}
+            className="mt-1 h-9"
+            onChange={(event) => setDimension("width", event.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${block.id}-height`} className="text-sm font-medium text-ink">
+            Height
+          </label>
+          <Input
+            id={`${block.id}-height`}
+            type="number"
+            min={1}
+            max={4096}
+            defaultValue={height}
+            className="mt-1 h-9"
+            onChange={(event) => setDimension("height", event.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DownloadBlockFields({
+  block,
+  asset,
+  onChange,
+}: {
+  block: DraftBlock;
+  asset: MediaDto | null;
+  onChange: (payload: Record<string, unknown>) => void;
+}): React.JSX.Element {
+  const payload = asRecord(block.payload);
+  const label = typeof payload.label === "string" ? payload.label : "";
+
+  return (
+    <div className="flex flex-col gap-3">
+      <MediaPicker
+        purpose="document"
+        selected={asset}
+        onSelect={(picked) =>
+          onChange({
+            v: 1,
+            mediaId: picked.id,
+            label: label || picked.altText || "Download",
+            byteSize: picked.byteSize,
+          })
+        }
+      />
+      <div>
+        <label htmlFor={`${block.id}-label`} className="text-sm font-medium text-ink">
+          Link label
+        </label>
+        <Input
+          id={`${block.id}-label`}
+          value={label}
+          maxLength={120}
+          className="mt-1 h-9"
+          onChange={(event) => onChange({ ...block.payload, v: 1, label: event.target.value })}
+        />
+        <p className="mt-1 text-sm text-ink-3">The size shown beside the link comes from the asset.</p>
+      </div>
+    </div>
+  );
+}
+
 export function ResourceEditor({
   resourceId,
   blocks: initial,
+  media,
 }: {
   resourceId: string;
   blocks: BlockDto[];
+  media: Record<string, MediaDto>;
 }): React.JSX.Element {
   const router = useRouter();
   const [blocks, setBlocks] = useState<DraftBlock[]>(initial.map(toDraft));
@@ -396,6 +550,18 @@ export function ResourceEditor({
                     onChange={(markdown) => editPayload(block.id, { ...block.payload, v: 1, markdown })}
                   />
                 </div>
+              ) : block.kind === "image" ? (
+                <ImageBlockFields
+                  block={block}
+                  asset={assetFor(block, media)}
+                  onChange={(payload) => editPayload(block.id, payload)}
+                />
+              ) : block.kind === "download" ? (
+                <DownloadBlockFields
+                  block={block}
+                  asset={assetFor(block, media)}
+                  onChange={(payload) => editPayload(block.id, payload)}
+                />
               ) : (
                 <Textarea
                   aria-label={`Block ${index + 1} payload`}

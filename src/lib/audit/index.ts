@@ -82,7 +82,11 @@ export type AuditAction =
   | "resource.direct_publish"
   | "resource.unpublish"
   | "resource.archive"
-  | "resource.restore";
+  | "resource.restore"
+  | "media.upload"
+  | "media.confirm"
+  | "media.update"
+  | "media.delete";
 
 export type AuditEntityType =
   | "curriculum"
@@ -90,7 +94,8 @@ export type AuditEntityType =
   | "subject"
   | "chapter"
   | "topic"
-  | "resource";
+  | "resource"
+  | "media";
 
 export type AuditEntry = {
   actorId: string;

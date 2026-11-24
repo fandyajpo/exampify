@@ -31,14 +31,14 @@ type Trx = Transaction<Database>;
 const ISO = (ms: number): string => new Date(ms).toISOString();
 
 /** Singular names: the audit `entity_type`, the search `entity_type` and the error label. */
-const ENTITY_NAME: Record<TransitionEntity, AuditEntityType> = {
+const ENTITY_NAME = {
   curricula: "curriculum",
   levels: "level",
   subjects: "subject",
   chapters: "chapter",
   topics: "topic",
   resources: "resource",
-};
+} as const satisfies Record<TransitionEntity, AuditEntityType>;
 
 type LoadedRow = {
   status: ContentStatus;

@@ -18,6 +18,8 @@
     "seo:check": "bun run scripts/check-structured-data.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1175.0",
+    "@aws-sdk/s3-request-presigner": "^3.1175.0",
     "@libsql/client": "^0.18.0",
     "@libsql/kysely-libsql": "^0.4.1",
     "@sendust/ts": "1.0.0",

@@ -39,6 +39,15 @@ import {
   resourceListSchema,
   resourceUpdateSchema,
 } from "@/lib/validation/resources";
+import {
+  mediaAltTextSchema,
+  mediaDownloadEnvelopeSchema,
+  mediaEnvelopeSchema,
+  mediaListQuerySchema,
+  mediaListSchema,
+  mediaTicketEnvelopeSchema,
+  mediaUploadUrlSchema,
+} from "@/lib/validation/media";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
@@ -168,6 +177,97 @@ const TRANSITION_ROUTES: Operation[] = (
     },
   ],
 }));
+
+/** `§7.6`: the two-step presigned upload, the library, alt text and a private read. */
+const MEDIA_ROUTES: Operation[] = [
+  {
+    method: "post",
+    path: "/api/v1/studio/media/upload-url",
+    operationId: "create-media-upload",
+    summary: "Request a presigned upload",
+    description:
+      "`author`+. Creates a `pending` row and a `PUT` signed for the exact content type and length, valid for 5 minutes. The purpose fixes the MIME allow-list and the size cap (`CONTENT_MODEL.md` §4.9): an image is at most 8 MB, a document 25 MB.",
+    tag: "studio",
+    request: mediaUploadUrlSchema,
+    responses: [
+      { status: 201, description: "The upload URL and its media id.", schema: mediaTicketEnvelopeSchema },
+      ...WRITE_ERRORS,
+      error(503),
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/studio/media/{id}/confirm",
+    operationId: "confirm-media",
+    summary: "Confirm an uploaded asset",
+    description:
+      "`author`+. No body. `HEAD`s the object, compares the size, checks the magic bytes and scrubs an SVG before the row becomes `ready`. Idempotent: a second call returns the same row.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "The ready asset.", schema: mediaEnvelopeSchema },
+      ...WRITE_ERRORS,
+      error(503),
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/studio/media",
+    operationId: "list-media",
+    summary: "List the media library",
+    description:
+      "`author`+. Newest first, cursor-paginated. Deleted rows are excluded unless `status=deleted`. `q` searches alt text, the only human-readable field on a row.",
+    tag: "studio",
+    request: mediaListQuerySchema,
+    responses: [
+      { status: 200, description: "A page of assets.", schema: mediaListSchema },
+      error(401),
+      error(403),
+      error(422),
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/studio/media/{id}",
+    operationId: "update-media",
+    summary: "Set an asset's alt text",
+    description:
+      "`author`+. `altText` is the only editable field; the bytes, type and storage key are fixed at confirm. An image needs non-empty alt text before the resource that embeds it can publish.",
+    tag: "studio",
+    request: mediaAltTextSchema,
+    responses: [
+      { status: 200, description: "Updated.", schema: mediaEnvelopeSchema },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/v1/studio/media/{id}",
+    operationId: "delete-media",
+    summary: "Soft-delete an asset",
+    description:
+      "`author`+. Soft delete; the blob is purged later. Refused with `409 MEDIA_IN_USE` while a resource block, subject hero or question still references it.",
+    tag: "studio",
+    responses: [
+      { status: 204, description: "Deleted." },
+      ...WRITE_ERRORS,
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/studio/media/{id}/download-url",
+    operationId: "media-download-url",
+    summary: "Sign a read for a private asset",
+    description: "`author`+. A presigned `GET` valid for at most 10 minutes; never a long-lived URL.",
+    tag: "studio",
+    responses: [
+      { status: 200, description: "A signed download URL.", schema: mediaDownloadEnvelopeSchema },
+      error(401),
+      error(403),
+      error(404),
+      error(503),
+    ],
+  },
+];
 
 /** `§7.2`: resources, blocks, the assessment links, the dry run and the staff preview. */
 const RESOURCE_ROUTES: Operation[] = [
@@ -687,5 +787,6 @@ export const OPERATIONS: readonly Operation[] = [
     ],
   },
   ...RESOURCE_ROUTES,
+  ...MEDIA_ROUTES,
   ...TRANSITION_ROUTES,
 ];

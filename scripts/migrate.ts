@@ -23,6 +23,9 @@ const client = createClient((authToken ? { url, authToken } : { url }) as Config
 const MIGRATIONS = [
   { id: "phase1", file: "../db/schema.phase1.sql" },
   { id: "phase2", file: "../db/schema.phase2.sql" },
+  // Slug-change redirects (`DATABASE_SCHEMA.md` §10.5) were the part of phase 2 that
+  // depended on the studio's rename flow, so they ship as their own additive file.
+  { id: "redirects", file: "../db/schema.redirects.sql" },
 ] as const;
 
 function statementsFrom(sql: string): string[] {

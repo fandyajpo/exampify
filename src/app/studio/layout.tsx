@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 const NAV = [
   { href: "/studio", label: "Overview" },
   { href: "/studio/subjects", label: "Subjects" },
+  { href: "/studio/media", label: "Media" },
 ] as const;
 
 export default async function StudioLayout({

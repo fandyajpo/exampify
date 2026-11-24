@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -18,6 +18,7 @@ import { breadcrumbTrail } from "@/lib/seo/breadcrumbs";
 import { breadcrumbList, pageGraph } from "@/lib/seo/jsonld";
 import { buildMetadata, description, titles } from "@/lib/seo/metadata";
 import { getTopicPage, url } from "@/lib/services/content";
+import { resolveRedirect } from "@/lib/services/redirects";
 
 export const revalidate = 300;
 
@@ -57,7 +58,11 @@ export default async function TopicPage({
 }): Promise<React.JSX.Element> {
   const { curriculum, level, subject, chapter, topic } = await params;
   const page = await getTopic(curriculum, level, subject, chapter, topic);
-  if (!page) notFound();
+  if (!page) {
+    const moved = await resolveRedirect(url.topic(curriculum, level, subject, chapter, topic));
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
 
   const trail = breadcrumbTrail({
     curriculum: page.context.curriculum,

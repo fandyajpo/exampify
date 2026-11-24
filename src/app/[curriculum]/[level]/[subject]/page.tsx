@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -20,6 +20,7 @@ import { breadcrumbTrail } from "@/lib/seo/breadcrumbs";
 import { breadcrumbList, course, pageGraph } from "@/lib/seo/jsonld";
 import { buildMetadata, description, titles } from "@/lib/seo/metadata";
 import { url } from "@/lib/services/content";
+import { resolveRedirect } from "@/lib/services/redirects";
 import { getSubjectDetail, type SubjectDetail } from "@/lib/services/taxonomy";
 
 export const revalidate = 300;
@@ -57,7 +58,12 @@ export default async function SubjectPage({
 }): Promise<React.JSX.Element> {
   const { curriculum, level, subject } = await params;
   const detail = await getDetail(curriculum, level, subject);
-  if (!detail) notFound();
+  if (!detail) {
+    // The row is the subject's own path, and also the prefix for its chapters and topics.
+    const moved = await resolveRedirect(url.subject(curriculum, level, subject));
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
 
   const trail = breadcrumbTrail({
     curriculum: { slug: detail.curriculumSlug, name: detail.curriculumName },

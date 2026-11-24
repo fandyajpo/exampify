@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import { cache } from "react";
 
@@ -22,6 +22,7 @@ import { breadcrumbTrail } from "@/lib/seo/breadcrumbs";
 import { breadcrumbList, learningResource, pageGraph } from "@/lib/seo/jsonld";
 import { buildMetadata, description, titles } from "@/lib/seo/metadata";
 import { getResourcePage, url } from "@/lib/services/content";
+import { resolveRedirect } from "@/lib/services/redirects";
 
 export const revalidate = 300;
 
@@ -69,7 +70,14 @@ export default async function ResourcePage({
 }): Promise<React.JSX.Element> {
   const { curriculum, level, subject, chapter, topic, resource } = await params;
   const page = await getResource(curriculum, level, subject, chapter, topic, resource);
-  if (!page) notFound();
+  if (!page) {
+    // A renamed resource answers its old URL with a permanent redirect to the new one.
+    const moved = await resolveRedirect(
+      url.resource(curriculum, level, subject, chapter, topic, resource),
+    );
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
 
   // `resource_viewed` is the Phase 1 proof of the `usage_events` path
   // (`MVP_ROADMAP.md` §4.6). It runs after the response is sent, is skipped during a

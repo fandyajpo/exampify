@@ -10,6 +10,8 @@ import { uuidv7 } from "@/lib/ids";
 import type { Actor } from "@/lib/rbac";
 import { slugify } from "@/lib/slug";
 import { decodeCursor, encodeCursor } from "@/lib/validation/cursor";
+
+import { redirectSlugChange } from "./redirects";
 import type {
   ChapterCreateInput,
   ChapterDto,
@@ -239,6 +241,11 @@ export async function updateCurriculum(
 
     await trx.updateTable("curricula").set(changes).where("id", "=", id).execute();
 
+    // A renamed curriculum moves every path beneath it; one prefix row covers them all.
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(trx, "curriculum", id, existing.slug, changes.slug, existing.status === "published");
+    }
+
     const row = { ...existing, ...changes } as CurriculumRow;
     const fields = Object.keys(changes).filter((key) => key !== "updated_at");
     await recordAudit(
@@ -456,6 +463,10 @@ export async function updateLevel(
     }
 
     await trx.updateTable("education_levels").set(changes).where("id", "=", id).execute();
+
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(trx, "level", id, existing.slug, changes.slug, existing.status === "published");
+    }
 
     const row = { ...existing, ...changes } as LevelRow;
     const fields = Object.keys(changes).filter((key) => key !== "updated_at");
@@ -773,6 +784,10 @@ export async function updateSubject(
       .where("id", "=", id)
       .execute();
 
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(trx, "subject", id, existing.slug, changes.slug, existing.status === "published");
+    }
+
     const row = { ...existing, ...changes } as SubjectRow;
     const fields = Object.keys({ ...changes, ...seo }).filter(
       (key) => key !== "updated_at" && key !== "updated_by",
@@ -992,6 +1007,10 @@ export async function updateChapter(
 
     await trx.updateTable("chapters").set(changes).where("id", "=", id).execute();
 
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(trx, "chapter", id, existing.slug, changes.slug, existing.status === "published");
+    }
+
     const row = { ...existing, ...changes } as ChapterRow;
     const fields = Object.keys(changes).filter((key) => key !== "updated_at" && key !== "updated_by");
     await recordAudit(
@@ -1202,6 +1221,10 @@ export async function updateTopic(
     }
 
     await trx.updateTable("topics").set(changes).where("id", "=", id).execute();
+
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(trx, "topic", id, existing.slug, changes.slug, existing.status === "published");
+    }
 
     const row = { ...existing, ...changes } as TopicRow;
     const fields = Object.keys(changes).filter((key) => key !== "updated_at" && key !== "updated_by");

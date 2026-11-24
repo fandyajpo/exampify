@@ -114,6 +114,35 @@ export const resourceDtoSchema = z.object({
   updatedAt: z.string(),
 });
 
+/**
+ * Assessment links (`API_CONTRACTS.md` §7.2): `format` is derived from these rows, so an
+ * editor links a practice set here rather than editing a format field.
+ */
+export const assessmentModeSchema = z.enum(["practice", "test", "mock"]);
+
+export const resourceAssessmentLinkSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  status: contentStatusSchema,
+  mode: assessmentModeSchema,
+  placement: z.enum(["inline", "end", "optional"]),
+  position: z.number().int(),
+});
+
+export const resourceAssessmentCandidateSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  status: contentStatusSchema,
+  mode: assessmentModeSchema,
+});
+
+export const resourceAssessmentOptionsSchema = z.object({
+  linked: z.array(resourceAssessmentLinkSchema),
+  available: z.array(resourceAssessmentCandidateSchema),
+});
+
 export const blockDtoSchema = z.object({
   id: z.string(),
   resourceId: z.string(),
@@ -147,6 +176,9 @@ export type BlockUpdateInput = z.infer<typeof blockUpdateSchema>;
 export type BlockReorderInput = z.infer<typeof blockReorderSchema>;
 export type ResourceAssessmentInput = z.infer<typeof resourceAssessmentSchema>;
 export type ResourceDto = z.infer<typeof resourceDtoSchema>;
+export type ResourceAssessmentLinkDto = z.infer<typeof resourceAssessmentLinkSchema>;
+export type ResourceAssessmentCandidateDto = z.infer<typeof resourceAssessmentCandidateSchema>;
+export type ResourceAssessmentOptionsDto = z.infer<typeof resourceAssessmentOptionsSchema>;
 export type BlockDto = z.infer<typeof blockDtoSchema>;
 export type GateResult = z.infer<typeof gateResultSchema>;
 export type GateDetail = z.infer<typeof gateDetailSchema>;

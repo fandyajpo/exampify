@@ -18,10 +18,13 @@ import type {
   BlockUpdateInput,
   GateResult,
   ResourceAssessmentInput,
+  ResourceAssessmentOptionsDto,
   ResourceCreateInput,
   ResourceDto,
   ResourceUpdateInput,
 } from "@/lib/validation/resources";
+
+import { redirectSlugChange } from "./redirects";
 import type { ContentStatus } from "@/lib/validation/taxonomy";
 
 /**
@@ -301,6 +304,17 @@ export async function updateResource(
     }
 
     await trx.updateTable("learning_resources").set(changes).where("id", "=", id).execute();
+
+    if (changes.slug !== undefined) {
+      await redirectSlugChange(
+        trx,
+        "resource",
+        id,
+        existing.slug,
+        changes.slug,
+        existing.status === "published",
+      );
+    }
 
     const fields = Object.keys(changes).filter((key) => key !== "updated_at" && key !== "updated_by");
     await recordAudit(
@@ -643,6 +657,80 @@ export async function reorderBlocks(actor: Actor, resourceId: string, orderedIds
 // ---------------------------------------------------------------------------
 // Assessment links
 // ---------------------------------------------------------------------------
+
+/**
+ * The practice panel's read (`API_CONTRACTS.md` §7.2): what is linked, in order, and the
+ * assessments this resource may link — its own topic, or a subject-scoped assessment for the
+ * subject the topic sits in. An assessment from another topic is what `linkAssessment`
+ * refuses, so it is never offered here either.
+ */
+export async function getResourceAssessments(
+  resourceId: string,
+): Promise<ResourceAssessmentOptionsDto> {
+  const db = await getDb();
+
+  const resource = await db
+    .selectFrom("learning_resources as r")
+    .innerJoin("topics as t", "t.id", "r.topic_id")
+    .innerJoin("chapters as ch", "ch.id", "t.chapter_id")
+    .select(["r.topic_id", "ch.subject_id"])
+    .where("r.id", "=", resourceId)
+    .executeTakeFirst();
+  if (!resource) throw notFound("resource");
+
+  const linked = await db
+    .selectFrom("resource_assessments as ra")
+    .innerJoin("assessments as a", "a.id", "ra.assessment_id")
+    .select([
+      "a.id",
+      "a.slug",
+      "a.title",
+      "a.status",
+      "a.mode",
+      "ra.placement",
+      "ra.position",
+    ])
+    .where("ra.resource_id", "=", resourceId)
+    .orderBy("ra.position")
+    .execute();
+
+  const candidates = await db
+    .selectFrom("assessments")
+    .select(["id", "slug", "title", "status", "mode"])
+    .where((eb) =>
+      eb.or([
+        eb("topic_id", "=", resource.topic_id),
+        eb.and([eb("topic_id", "is", null), eb("subject_id", "=", resource.subject_id)]),
+      ]),
+    )
+    .orderBy("title")
+    .execute();
+
+  const linkedIds = new Set(linked.map((row) => row.id));
+
+  // Plain literals: these cross the server/client boundary, which rejects objects that carry a
+  // prototype from the database driver.
+  return {
+    linked: linked.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      status: row.status,
+      mode: row.mode,
+      placement: row.placement,
+      position: row.position,
+    })),
+    available: candidates
+      .filter((row) => !linkedIds.has(row.id))
+      .map((row) => ({
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        status: row.status,
+        mode: row.mode,
+      })),
+  };
+}
 
 export async function linkAssessment(
   actor: Actor,
