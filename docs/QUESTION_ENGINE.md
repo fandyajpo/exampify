@@ -197,15 +197,17 @@ score_percent_x100 = max_score_x100 === 0 ? null : round(score_x100 * 10000 / ma
 Inputs: `source`, scope ids, `questionCount`, `difficulty`, `questionTypes`, `order`. Constraints: published questions only, in scope (primary or cross-listed), matching filters, no duplicates.
 
 ```ts
-export async function selectQuestions(trx: Kysely<DB>, input: SelectionInput): Promise<SelectedQuestion[]> {
-  const pool = await queryPool(trx, input);            // 1 query, LIMIT count*6, ORDER BY random_key
-  const unique = uniqueBy(pool, (q) => q.id);
-  const shuffled = input.order === 'fixed' ? unique : shuffle(unique, input.seed);
-  return shuffled.slice(0, input.questionCount);
-}
+// src/lib/practice/selection.ts — the query is only the pool; the rules are the pure half.
+export async function selectQuestions(
+  db: Kysely<DB>,
+  scope: { topicIds: readonly string[] },   // resolved from `source` by the route
+  filter: SelectionFilter,                   // count, difficulty, types, order, seed
+): Promise<SelectionResult>;
+
+export function pickQuestions(pool: readonly PoolQuestion[], filter: SelectionFilter): SelectionResult;
 ```
 
-**Sampling:** `random_key INTEGER` per question, indexed `(topic_id, random_key)`. Draw with `WHERE random_key >= ? ORDER BY random_key LIMIT n`, wrapping once when short. This replaces `ORDER BY random()` (a full sort per request) and stays uniform.
+**Sampling:** one query draws every published question whose primary or cross-listed topic is in scope (`DISTINCT` by question id), then `pickQuestions()` dedupes, filters and shuffles it with a seeded Fisher–Yates over a `mulberry32` PRNG. The scope bounds the pool — a topic holds tens of published questions — so a whole draw is cheaper than maintaining a `random_key` column and its backfill, and the seed in `config` still reproduces the order exactly. If a scope's pool ever outgrows that assumption (low thousands of rows), `random_key INTEGER` indexed `(topic_id, random_key)` with `WHERE random_key >= ? ORDER BY random_key LIMIT n` and one wrap is the documented replacement; the caller's contract does not change.
 
 **Seeding:** the attempt stores `config.seed` (a 32-bit integer) so a retry can be reproduced for debugging. Selection still re-runs; it does not reuse ids.
 
