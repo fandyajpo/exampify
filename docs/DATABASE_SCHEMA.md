@@ -57,7 +57,7 @@ Turso speaks the SQLite dialect through libSQL. Nothing in this schema may assum
 | Enumerations | `TEXT` + `CHECK`; values are identical across docs and code |
 | Index names | `idx_<table>_<cols>`; partial: `idx_<table>_<cols>_<predicate>` |
 | Cascades | `ON DELETE CASCADE` only parent → content it exclusively owns. Anything referenced by an attempt is `ON DELETE RESTRICT` |
-| Foreign keys | `PRAGMA foreign_keys = ON` on every connection. Without it SQLite silently ignores FKs — the single most dangerous default here |
+| Foreign keys | `PRAGMA foreign_keys = ON` on every local (`file:`) connection. Without it SQLite silently ignores FKs — the single most dangerous default here. A remote libSQL database rejects `PRAGMA` statements and enforces FKs server-side |
 | Text size | `TEXT`; length limits enforced by Zod. A `CHECK (length(x) <= n)` is added only where an unbounded value would break an index or payload budget |
 | JSON | `TEXT` + `CHECK (json_valid(col))`; every JSON column has a `v` discriminator and a Zod schema, validated on read and write |
 
@@ -838,6 +838,8 @@ PRAGMA journal_mode = WAL;     -- local/dev; Turso manages the remote equivalent
 PRAGMA busy_timeout = 5000;    -- bound write contention instead of instant failure
 PRAGMA synchronous = NORMAL;   -- durability/latency trade-off, documented
 ```
+
+These run only on a `file:` connection. A remote libSQL database answers a `PRAGMA` with `SQL_PARSE_ERROR: SQL not allowed statement` and already enforces foreign keys and write serialisation itself, so `lib/db` skips them when `TURSO_DATABASE_URL` is not a `file:` URL.
 
 **Seed data (`seed/`)**
 

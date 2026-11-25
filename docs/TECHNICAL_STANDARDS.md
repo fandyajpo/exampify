@@ -300,7 +300,7 @@ export class AppError extends Error {
 - One `Kysely<DB>` instance per process, created from a `@libsql/client/web` client; never construct a client per request.
 - **Parameterised queries only.** `sql` template literals take bound parameters (`sql\`x = ${value}\``); string interpolation into SQL is forbidden.
 - **Explicit column projections.** `selectAll()` on `questions` is a defect — it fetches `answer_key`. Student-facing reads select named columns.
-- `PRAGMA foreign_keys = ON` is asserted at startup (throws if off) and after every new connection in scripts.
+- `PRAGMA foreign_keys = ON` is applied once per connection for a local `file:` database; a remote libSQL database rejects `PRAGMA` statements (`SQL not allowed statement`) and enforces foreign keys server-side, so `lib/db` sends none over HTTP.
 - Transactions: `db.transaction().execute(async (trx) => …)` for multi-write operations; no external HTTP call inside a transaction.
 - Write contention: keep transactions short, set `busy_timeout`, and prefer a conditional `UPDATE … WHERE status = 'in_progress'` over read-then-write.
 - **No `OFFSET` pagination** on unbounded lists; keyset cursors only.

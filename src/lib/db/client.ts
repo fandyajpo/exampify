@@ -33,6 +33,10 @@ function createLibsqlClient(): ReturnType<typeof createClient> {
 const client = createLibsqlClient();
 
 const ready: Promise<void> = (async () => {
+  // Connection pragmas are a local-file concern. A remote libSQL database rejects them with
+  // `SQL_PARSE_ERROR: SQL not allowed statement` and already enforces foreign keys
+  // server-side, so sending them over HTTP would fail every read (`TECHNICAL_STANDARDS.md` §4.3).
+  if (!env.TURSO_DATABASE_URL.startsWith("file:")) return;
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
 })();

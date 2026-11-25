@@ -257,6 +257,13 @@ let blockCount = 0;
 let questionCount = 0;
 let assessmentCount = 0;
 
+/**
+ * Cross-listings (`question_topics` rows for a secondary topic) are deferred until every
+ * topic exists. A remote database enforces foreign keys per statement, so inserting one
+ * while walking a chapter in order would reference a topic that is not created yet.
+ */
+const crossListings: { questionId: string; topicId: string }[] = [];
+
 for (const [index, subject] of SEED_SUBJECTS.entries()) {
   const subjectId = id("subject", subject.levelSlug, subject.slug);
   const levelId = levelIds.get(subject.levelSlug);
@@ -439,11 +446,7 @@ for (const [index, subject] of SEED_SUBJECTS.entries()) {
           chapter.slug,
           crossListTarget.slug,
         );
-        await upsertWhere(
-          "question_topics",
-          { question_id: questionIds[0]!, topic_id: targetTopicId, is_primary: 0 },
-          ["question_id", "topic_id"],
-        );
+        crossListings.push({ questionId: questionIds[0]!, topicId: targetTopicId });
       }
 
       const assessmentId = id("assessment", subject.levelSlug, subject.slug, chapter.slug, topic.slug);
@@ -495,6 +498,14 @@ for (const [index, subject] of SEED_SUBJECTS.entries()) {
       );
     }
   }
+}
+
+for (const listing of crossListings) {
+  await upsertWhere(
+    "question_topics",
+    { question_id: listing.questionId, topic_id: listing.topicId, is_primary: 0 },
+    ["question_id", "topic_id"],
+  );
 }
 
 console.log(
