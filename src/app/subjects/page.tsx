@@ -27,14 +27,10 @@ export default async function SubjectsPage(): Promise<React.JSX.Element> {
       <SiteHeader />
 
       <main id="main" className="flex-1">
-        <section className="border-b border-line-strong bg-paper-accent">
-          <div className="shell py-12 md:py-16">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
-              Catalogue
-            </p>
-            <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em] md:text-5xl">
-              Subjects
-            </h1>
+        <section className="bg-paper-raised">
+          <div className="shell py-14 md:py-20">
+            <p className="text-xs font-semibold text-ink-3">Catalogue</p>
+            <h1 className="mt-3 font-display text-5xl font-semibold text-ink">Subjects</h1>
             <p className="mt-4 max-w-[60ch] font-editorial text-2xl leading-[1.35] text-ink-2">
               {total > 0
                 ? `${total} published ${total === 1 ? "subject" : "subjects"}, each opening on a chapter list you can read without an account.`
@@ -46,10 +42,10 @@ export default async function SubjectsPage(): Promise<React.JSX.Element> {
         <div className="shell section-y">
           {levels.map((level) => (
             <section key={level.levelSlug} aria-labelledby={`level-${level.levelSlug}`} className="mb-16 last:mb-0">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line-strong pb-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-4">
                 <h2
                   id={`level-${level.levelSlug}`}
-                  className="font-display text-2xl font-semibold tracking-[-0.015em]"
+                  className="font-display text-2xl font-semibold text-ink"
                 >
                   {level.curriculumName} · {level.levelName}
                 </h2>

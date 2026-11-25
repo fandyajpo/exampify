@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * Hero entrance reveal (DESIGN_SYSTEM.md §7): a 240 ms fade plus a 12 px rise on the
- * documented easing, and nothing else on load. §11 forbids entrance animation on every
- * section, so this is used for the hero only.
+ * Hero entrance reveal (DESIGN_SYSTEM.md §7): a short fade and rise driven by a
+ * critically damped spring, so it settles without overshoot and can be interrupted at any
+ * frame. §11 forbids entrance animation on every section, so this is used for the hero only.
  *
  * The H1 is deliberately outside this wrapper: it paints immediately, so the animation
  * cannot delay the LCP text. Reduced motion keeps the same initial markup (so hydration
@@ -11,8 +11,6 @@
  */
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
-
-const EASE: [number, number, number, number] = [0.2, 0.6, 0.2, 1];
 
 type RevealProps = {
   children: ReactNode;
@@ -26,13 +24,13 @@ export function Reveal({ children, delay = 0, className }: RevealProps): React.J
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: shouldReduceMotion ? 0 : 0.24,
-        delay: shouldReduceMotion ? 0 : delay,
-        ease: EASE,
-      }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : { type: "spring", bounce: 0, duration: 0.6, delay }
+      }
     >
       {children}
     </motion.div>

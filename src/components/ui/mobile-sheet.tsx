@@ -2,14 +2,14 @@
 
 /**
  * The one mobile navigation sheet, shared by the public header and the studio shell
- * (`DESIGN_SYSTEM.md` §9.7).
+ * (`DESIGN_SYSTEM.md` §5.4, §9.7).
  *
  * A native `<details>` keeps the menu usable without JavaScript; the effects and the panel's
  * click handler only add the dismissals `<details>` does not provide on its own — Escape, a
  * tap outside, arriving on a new route (a soft navigation keeps the header mounted), and
  * following a link that points at the page you are already on. The panel is a full-width
- * sheet docked under the 64 px bar rather than a dropdown, so 48 px rows stay comfortable at
- * 320 px.
+ * sheet docked under the 64 px bar with a dense material, so 48 px rows stay comfortable at
+ * 320 px and the page reads as pushed back behind it.
  *
  * The caller supplies the trigger's breakpoint (`hiddenFrom`) so the same sheet serves a bar
  * that collapses at `md` and one that collapses at `lg`. Links need no close callback: the
@@ -72,7 +72,7 @@ export function MobileSheet({
   return (
     <details ref={ref} className={cn("group relative", breakpoint)}>
       <summary
-        className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-sm border border-line-strong text-ink-2 transition-colors hover:border-ink/40 hover:text-ink [&::-webkit-details-marker]:hidden"
+        className="press inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-full bg-paper-sunk text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden"
         aria-label={triggerLabel}
       >
         <IconMenu className="size-5" />
@@ -85,7 +85,7 @@ export function MobileSheet({
         aria-label={`Close ${panelLabel.toLowerCase()}`}
         onClick={close}
         className={cn(
-          "fixed inset-x-0 top-16 bottom-0 z-30 cursor-default bg-ink/15",
+          "fixed inset-x-0 top-16 bottom-0 z-30 cursor-default bg-[var(--scrim)]",
           breakpoint,
         )}
       />
@@ -96,18 +96,18 @@ export function MobileSheet({
             close();
         }}
         className={cn(
-          "motion-drawer fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-line bg-paper-raised shadow-md",
+          "motion-drawer material-strong fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-b-lg border-b border-line shadow-lg",
           breakpoint,
         )}
       >
-        <div className="flex items-center justify-between border-b border-line px-4 py-1.5">
-          <span className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
+        <div className="flex items-center justify-between border-b border-line/70 px-4 py-1.5">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-3">
             {panelLabel}
           </span>
           <button
             type="button"
             onClick={close}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-sm px-2 text-sm font-medium text-ink-2"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-ink-2 hover:text-ink"
           >
             Close
             <span aria-hidden="true" className="text-lg leading-none">

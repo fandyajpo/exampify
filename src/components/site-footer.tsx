@@ -32,14 +32,14 @@ const COLUMNS = [
 
 export function SiteFooter(): React.JSX.Element {
   return (
-    <footer className="border-t border-line-strong bg-paper">
-      <div className="shell py-12 md:py-16">
+    <footer className="border-t border-line bg-paper-raised">
+      <div className="shell py-14 md:py-20">
         <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div className="sm:col-span-2 lg:col-span-1 lg:pr-10">
-            <p className="font-display text-base font-semibold tracking-tight">
+            <p className="font-display text-[1.0625rem] font-semibold tracking-[-0.02em]">
               Exampify<span className="text-cobalt">.</span>
             </p>
-            <p className="mt-2 max-w-[32ch] text-sm text-ink-2">
+            <p className="mt-2 max-w-[34ch] text-sm text-ink-2">
               Syllabus-shaped study material, lessons and practice for exam candidates.
             </p>
           </div>
@@ -48,7 +48,7 @@ export function SiteFooter(): React.JSX.Element {
             <nav key={column.title} aria-labelledby={`footer-${column.title.toLowerCase()}`}>
               <h2
                 id={`footer-${column.title.toLowerCase()}`}
-                className="text-xs font-medium uppercase tracking-[0.12em] text-ink-3"
+                className="text-xs font-semibold text-ink-3"
               >
                 {column.title}
               </h2>
@@ -57,7 +57,7 @@ export function SiteFooter(): React.JSX.Element {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="inline-flex min-h-10 items-center text-sm text-ink-2 transition-colors hover:text-ink"
+                      className="inline-flex min-h-10 items-center text-sm text-ink-2 transition-colors duration-200 hover:text-ink"
                     >
                       {link.label}
                     </Link>
@@ -68,7 +68,7 @@ export function SiteFooter(): React.JSX.Element {
           ))}
         </div>
 
-        <p className="mt-10 border-t border-line pt-6 text-sm text-ink-3">
+        <p className="mt-12 border-t border-line pt-6 text-sm text-ink-3">
           © 2026 Exampify. All content is written for exam preparation.
         </p>
       </div>

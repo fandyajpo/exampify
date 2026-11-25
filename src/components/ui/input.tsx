@@ -1,16 +1,18 @@
 /**
  * Text inputs and `FormField` (`DESIGN_SYSTEM.md` §9.6).
  *
- * Labels are always visible — never placeholder-only — and the error slot is linked with
- * `aria-describedby` and announced politely. `FormField` is a render prop so the ids and
- * ARIA wiring cannot be forgotten at the call site.
+ * Controls are filled rather than outlined: a quiet `paper-sunk` well that becomes a white
+ * raised surface on focus, which is where the interaction is. Labels are always visible —
+ * never placeholder-only — and the error slot is linked with `aria-describedby` and
+ * announced politely. `FormField` is a render prop so the ids and ARIA wiring cannot be
+ * forgotten at the call site.
  */
 import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 const CONTROL =
-  "w-full rounded-sm border border-line-strong bg-paper-raised px-3 text-base text-ink placeholder:text-ink-3 transition-colors duration-[120ms] disabled:bg-paper-sunk disabled:text-ink-3 aria-[invalid=true]:border-coral";
+  "w-full rounded-md border border-transparent bg-paper-sunk px-4 text-base text-ink placeholder:text-ink-3 transition-[background-color,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.22,0.75,0.28,1)] hover:bg-line-soft focus:bg-paper-raised focus:shadow-sm disabled:bg-paper-sunk disabled:text-ink-3 aria-[invalid=true]:border-coral";
 
 export function Input({ className, ...props }: ComponentProps<"input">): React.JSX.Element {
   return <input className={cn(CONTROL, "h-11", className)} {...props} />;

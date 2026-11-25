@@ -3,6 +3,10 @@
  * curriculum/level picker, popular subjects, how it works, subject-group browse and search
  * entry points.
  *
+ * The hero is the one place on the site with this much air: a centred headline, one lead
+ * paragraph and two actions, then the illustration. Everything below it returns to the
+ * editorial rhythm of the rest of the product.
+ *
  * Placeholder subject rows stand in for `GET /subjects` until `lib/db` is wired; the hrefs
  * are the canonical IA routes. Their counts are deliberately absent rather than invented.
  */
@@ -71,48 +75,52 @@ export default async function HomePage(): Promise<React.JSX.Element> {
 
       <main id="main" className="flex-1">
         {/* Hero */}
-        <section className="border-b border-line-strong bg-paper-accent">
-          <div className="shell grid items-center gap-12 py-14 md:py-20 lg:grid-cols-12 lg:gap-10 lg:py-24">
-            <div className="lg:col-span-7">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
-                Study material · Lessons · Practice tests
+        <section className="bg-paper-raised">
+          <div className="shell pt-16 pb-14 text-center md:pt-24 md:pb-20">
+            <p className="inline-flex items-center gap-2 rounded-full bg-paper-sunk px-3.5 py-1.5 text-xs font-medium text-ink-2">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-cobalt" />
+              Study material · Lessons · Practice tests
+            </p>
+
+            <h1 className="mx-auto mt-6 max-w-[16ch] text-balance font-display text-5xl font-semibold text-ink">
+              Know exactly what to study next.
+            </h1>
+
+            <Reveal delay={0.06}>
+              <p className="mx-auto mt-6 max-w-[44ch] text-balance font-editorial text-2xl leading-[1.35] text-ink-2 md:text-3xl">
+                Syllabus-shaped notes, lessons and practice tests you can read end to end before
+                you decide to test yourself.
               </p>
-              <h1 className="mt-4 max-w-[18ch] font-display text-4xl font-semibold tracking-[-0.03em] text-balance md:text-5xl">
-                Know exactly what to study next.
-              </h1>
-              <Reveal delay={0.06}>
-                <p className="mt-5 max-w-[36ch] font-editorial text-2xl leading-[1.35] text-ink-2 md:text-3xl">
-                  Syllabus-shaped notes, lessons and practice tests you can read end to end before
-                  you decide to test yourself.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <ButtonLink href="/subjects" size="lg">
-                    Find your course
-                    <IconArrowRight className="size-5" />
-                  </ButtonLink>
-                  <ButtonLink href="/search" variant="secondary" size="lg">
-                    <IconSearch className="size-5" />
-                    Search
-                  </ButtonLink>
-                </div>
 
-                <div className="mt-10 border-t border-line-strong pt-6">
-                  <h2 className="text-xs font-medium uppercase tracking-[0.12em] text-ink-3">
-                    Jump to your level
-                  </h2>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {LEVELS.map((level) => (
-                      <li key={level.href}>
-                        <ChipLink href={level.href}>{level.label}</ChipLink>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Reveal>
-            </div>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+                <ButtonLink href="/subjects" size="lg">
+                  Find your course
+                  <IconArrowRight className="size-5" />
+                </ButtonLink>
+                <ButtonLink href="/search" variant="secondary" size="lg">
+                  <IconSearch className="size-5" />
+                  Search
+                </ButtonLink>
+              </div>
+            </Reveal>
 
-            <Reveal delay={0.12} className="lg:col-span-5">
-              <HeroIllustration />
+            <Reveal delay={0.12}>
+              <div className="mx-auto mt-12 max-w-[720px]">
+                <h2 className="text-xs font-semibold text-ink-3">Jump to your level</h2>
+                <ul className="mt-3 flex flex-wrap justify-center gap-2">
+                  {LEVELS.map((level) => (
+                    <li key={level.href}>
+                      <ChipLink href={level.href}>{level.label}</ChipLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.18}>
+              <div className="mx-auto mt-14 max-w-[440px]">
+                <HeroIllustration />
+              </div>
             </Reveal>
           </div>
         </section>
@@ -122,10 +130,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
           <div className="shell section-y">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h2
-                  id="popular-subjects"
-                  className="font-display text-2xl font-semibold tracking-[-0.015em]"
-                >
+                <h2 id="popular-subjects" className="font-display text-3xl font-semibold text-ink">
                   Popular subjects
                 </h2>
                 <p className="mt-2 max-w-[60ch] text-ink-2">
@@ -134,7 +139,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
               </div>
               <Link
                 href="/subjects"
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1 rounded-full text-sm font-medium text-cobalt transition-colors hover:text-ink"
               >
                 All subjects
                 <IconArrowRight className="size-4" />
@@ -165,18 +170,21 @@ export default async function HomePage(): Promise<React.JSX.Element> {
         </section>
 
         {/* How it works */}
-        <section aria-labelledby="how-it-works" className="border-y border-line bg-paper-sunk">
+        <section aria-labelledby="how-it-works" className="bg-paper-sunk">
           <div className="shell section-y">
-            <h2 id="how-it-works" className="font-display text-2xl font-semibold tracking-[-0.015em]">
+            <h2 id="how-it-works" className="font-display text-3xl font-semibold text-ink">
               Read, practise, then fix what is weak
             </h2>
-            <ol className="mt-10 grid gap-8 md:grid-cols-3 md:gap-10">
+            <ol className="mt-10 grid gap-4 md:grid-cols-3">
               {STEPS.map((step) => (
-                <li key={step.number} className="border-t border-line-strong pt-5">
-                  <p className="font-mono text-xs text-ink-3">{step.number}</p>
-                  <h3 className="mt-2 font-display text-lg font-semibold tracking-[-0.01em]">
-                    {step.title}
-                  </h3>
+                <li
+                  key={step.number}
+                  className="rounded-lg border border-line bg-paper-raised p-6 shadow-sm"
+                >
+                  <span className="inline-flex size-9 items-center justify-center rounded-full bg-paper-sunk font-mono text-xs text-ink-3">
+                    {step.number}
+                  </span>
+                  <h3 className="mt-5 font-display text-xl font-semibold text-ink">{step.title}</h3>
                   <p className="mt-2 max-w-[46ch] text-base text-ink-2">{step.body}</p>
                 </li>
               ))}
@@ -187,10 +195,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
         {/* Browse by subject group */}
         <section aria-labelledby="browse-by-group" className="bg-paper">
           <div className="shell section-y">
-            <h2
-              id="browse-by-group"
-              className="font-display text-2xl font-semibold tracking-[-0.015em]"
-            >
+            <h2 id="browse-by-group" className="font-display text-3xl font-semibold text-ink">
               Browse by subject group
             </h2>
             <p className="mt-2 max-w-[60ch] text-ink-2">

@@ -46,7 +46,7 @@ export default async function StudioLayout({
   if (!can(actor, "content:read:studio")) notFound();
 
   return (
-    <div className="min-h-screen bg-paper-sunk">
+    <div className="min-h-screen bg-paper">
       <a
         href="#main"
         className="sr-only rounded-sm bg-paper-raised px-4 py-3 font-medium shadow-md focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
@@ -55,7 +55,7 @@ export default async function StudioLayout({
       </a>
 
       <div className="lg:grid lg:grid-cols-[var(--sidebar-w)_minmax(0,1fr)]">
-        <aside className="hidden border-r border-line bg-paper lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <aside className="material hidden border-r border-line lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
           <div className="flex h-[72px] shrink-0 items-center border-b border-line px-5">
             <Wordmark />
           </div>
@@ -76,7 +76,7 @@ export default async function StudioLayout({
         </aside>
 
         <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden">
+          <header className="material sticky top-0 z-40 border-b border-line lg:hidden">
             <div className="flex h-16 items-center gap-3 px-[var(--gutter)]">
               <Wordmark />
 

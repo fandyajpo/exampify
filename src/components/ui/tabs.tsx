@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * `Tabs` (`DESIGN_SYSTEM.md` §9.7): underline style, 3 px active rule, arrow-key
- * navigation and one tab stop. Panels are rendered on the server and passed in, so the
- * component owns only selection state.
+ * `Tabs` (`DESIGN_SYSTEM.md` §9.7): a segmented control — a sunk track with the selected
+ * segment raised on white — with arrow-key navigation and one tab stop. Panels are rendered
+ * on the server and passed in, so the component owns only selection state.
  */
 import { useId, useRef, useState, type ReactNode } from "react";
 
@@ -39,7 +39,11 @@ export function Tabs({
 
   return (
     <div className={className}>
-      <div role="tablist" aria-orientation="horizontal" className="flex gap-1 border-b border-line">
+      <div
+        role="tablist"
+        aria-orientation="horizontal"
+        className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-full bg-paper-sunk p-1"
+      >
         {items.map((item, index) => {
           const isActive = item.id === active?.id;
           return (
@@ -73,10 +77,10 @@ export function Tabs({
                 }
               }}
               className={cn(
-                "-mb-px min-h-11 border-b-[3px] px-3 text-sm font-medium transition-colors",
+                "min-h-9 cursor-pointer rounded-full px-4 text-sm font-medium transition-[background-color,color,box-shadow] duration-200 ease-[cubic-bezier(0.22,0.75,0.28,1)]",
                 isActive
-                  ? "border-ink text-ink"
-                  : "border-transparent text-ink-3 hover:border-line-strong hover:text-ink",
+                  ? "bg-paper-raised text-ink shadow-sm"
+                  : "text-ink-2 hover:text-ink",
               )}
             >
               {item.label}

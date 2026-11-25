@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { PageTransition } from "@/components/motion/page-transition";
 import { publicEnv } from "@/lib/env";
 import "./globals.css";
 
-// Typography per DESIGN_SYSTEM.md §4.1: self-hosted with next/font, no Google CDN at runtime.
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
+/*
+ * Typography per DESIGN_SYSTEM.md §4.1. The interface runs on the platform's own face
+ * (`system-ui`), which ships optical sizing, tracking tables and legibility tuning for free.
+ * Only the editorial serif and the mono face are self-hosted with next/font — no Google CDN
+ * request at runtime.
+ */
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument",
   weight: "400",
@@ -48,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${instrumentSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <PageTransition>{children}</PageTransition>

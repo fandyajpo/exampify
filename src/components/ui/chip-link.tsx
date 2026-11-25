@@ -10,7 +10,7 @@ export function ChipLink({ className, ...props }: ComponentProps<typeof Link>): 
   return (
     <Link
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-paper-raised px-4 text-sm font-medium text-ink-2 transition-colors duration-[120ms] ease-[cubic-bezier(0.2,0.6,0.2,1)] hover:border-ink/40 hover:text-ink",
+        "press inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-paper-raised px-4 text-sm font-medium text-ink-2 shadow-sm hover:border-line-strong hover:text-ink",
         className,
       )}
       {...props}

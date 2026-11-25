@@ -1,6 +1,6 @@
 /**
- * SubjectCard (DESIGN_SYSTEM.md §9.4), refined: a 4 px identity rule instead of an 8 px
- * band, hairline edge, neutral elevation, and type at semibold rather than heavy.
+ * SubjectCard (DESIGN_SYSTEM.md §9.4): a white card with the subject identity carried by a
+ * tinted icon tile and its label, not by a coloured band across the top edge.
  *
  * The whole card is one link, so the accessible name is the subject. Subject identity is
  * applied through `--subject-ink` / `--subject-fill` on the wrapper (§3.3); the theme maps
@@ -43,19 +43,18 @@ export function SubjectCard({
         } as CSSProperties
       }
       className={cn(
-        "subject-card lift group flex h-full flex-col overflow-hidden rounded-md border border-line bg-paper-raised shadow-sm hover:border-line-strong hover:shadow-md",
+        "subject-card lift group h-full rounded-lg border border-line bg-paper-raised shadow-sm hover:border-line-strong hover:shadow-md",
         className,
       )}
     >
-      <span aria-hidden="true" className="h-1 w-full bg-subject-ink" />
+      <span className="inline-flex size-11 items-center justify-center rounded-md bg-subject-fill text-subject-ink">
+        <SubjectIcon iconKey={iconKey} className="size-5" />
+      </span>
       <div className="subject-card-body">
-        <span className="inline-flex size-10 items-center justify-center rounded-sm bg-subject-fill text-subject-ink">
-          <SubjectIcon iconKey={iconKey} className="size-5" />
-        </span>
         <div>
           {/* Long names clamp to two lines (DS-03); the full name stays in the link title. */}
           <p
-            className="subject-card-title line-clamp-2 font-display font-semibold tracking-[-0.01em] text-ink"
+            className="subject-card-title line-clamp-2 font-semibold text-ink"
             title={name}
           >
             {name}
@@ -64,9 +63,9 @@ export function SubjectCard({
             {group} · {level}
           </p>
         </div>
-        <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink-2 transition-colors group-hover:text-cobalt">
+        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-cobalt">
           Browse chapters
-          <IconArrowRight className="size-4" />
+          <IconArrowRight className="size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)] group-hover:translate-x-0.5" />
         </span>
       </div>
     </Link>

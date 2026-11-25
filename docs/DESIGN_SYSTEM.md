@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| Version | 1.2 |
+| Version | 1.3 |
 | Status | Normative — §4.2, §5.1, §5.5, §5.4, §7 and §9.7/§9.9 describe the shipped layout system |
-| Changelog | 1.2 — reconciles §2, §3.1, §5.3, §5.4, §8, §9 and §11 with `globals.css`: 1 px warm hairlines and soft neutral elevation replace 2 px ink borders and hard-offset shadows, and the unused `--border-base` / `--border-bold` tokens are removed. 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
+| Changelog | 1.3 — Apple-style material revamp: a cool neutral palette (`--paper` `#F5F5F7`, action blue `#0066CC`), the platform system font for display and body, 8–28 px radii, diffuse neutral depth, translucent `.material` chrome with reduced-transparency and increased-contrast fallbacks, pill controls, a segmented `Tabs` control, and spring motion. 1.2 — reconciles §2, §3.1, §5.3, §5.4, §8, §9 and §11 with `globals.css`: 1 px warm hairlines and soft neutral elevation replace 2 px ink borders and hard-offset shadows, and the unused `--border-base` / `--border-bold` tokens are removed. 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
 | Supersedes | Version 0.1 (materials/tutorials vocabulary, no format or search components) |
 | Depends on | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) (§3 design direction) |
 | Referenced by | [UI_UX_GUIDELINES.md](./UI_UX_GUIDELINES.md), [MVP_ROADMAP.md](./MVP_ROADMAP.md) |
@@ -13,7 +13,7 @@
 
 ## 1. Purpose and scope
 
-A concrete, implementable design system for **soft neo-brutalism**: warm paper surfaces, hairline structure, confident editorial type, soft neutral elevation and colourful subject identities — balanced with generous whitespace, controlled radii and a restrained accent palette so it reads as an art-directed education product rather than a novelty poster.
+A concrete, implementable design system for a **calm, material interface**: a cool neutral canvas, white raised surfaces, translucent chrome, one vivid action blue, hairline structure, the platform system typeface and colourful subject identities — balanced with generous whitespace, continuous radii and a restrained accent palette so it reads as an art-directed education product rather than a novelty poster.
 
 **In scope:** foundations (colour, type, spacing, radius, border, shadow, iconography, illustrations, motion), token names and values, component inventory with anatomy and variants, accessibility constraints, and implementation guidance (CSS variables + Tailwind theme mapping).
 
@@ -27,13 +27,13 @@ A concrete, implementable design system for **soft neo-brutalism**: warm paper s
 
 | Principle | What it means in practice | Anti-pattern it prevents |
 |---|---|---|
-| **Paper, not glass** | Warm off-white surfaces; elevation is a soft neutral shadow, never a coloured glow | Frosted-glass cards, gradient meshes, hard offset shadows |
-| **Ink outlines** | 1 px warm hairlines define structure; the darker `--line-strong` hairline marks interactive edges | Borderless floating cards that lose hierarchy |
-| **Editorial hierarchy** | One display heading per viewport; body text sized for reading (17–18 px) with 1.6 line height | Uniform 14 px text everywhere |
-| **Colour is a label, not decoration** | Each subject owns one token; callouts use five semantic kinds; nothing is coloured "because it looks nice" | Rainbow gradients, coloured text on coloured fills |
-| **Soft brutalism** | Hairline structure and soft elevation, but 10–16 px radii, real whitespace, and no clipped or rotated elements | Random stickers, tape, torn paper, rotations |
-| **Motion explains** | Motion shows a state change (save, reveal, advance); nothing loops or bounces for effect | Scroll-jacking, parallax, infinite marquees |
-| **Accessible by construction** | Every colour pair is documented with its contrast; focus is always visible | Low-contrast pastels on cream |
+| **Material depth** | Chrome (the header, mobile sheets, the studio sidebar) is a translucent layer with content scrolling beneath it; cards are opaque white raised on a neutral canvas. Materials never stack | Opaque bars that carve a fixed strip out of the page, glass cards floating on glass |
+| **Hairline structure** | 1 px cool hairlines separate surfaces; they never draw the shape. A control is legible at rest without depending on its shadow | Hard 2 px outlines, a border on every row of text |
+| **Editorial hierarchy** | One display heading per viewport; the system face at 17 px/1.6 for reading, and fluid display sizes with size-specific tracking | Uniform 14 px text everywhere, one letter-spacing for every size |
+| **Colour is a label, not decoration** | One vivid action blue, five semantic callout kinds, and one identity colour per subject; nothing is coloured "because it looks nice" | Rainbow gradients, coloured text on coloured fills |
+| **Continuous geometry** | 8–28 px radii, real whitespace and diffuse neutral depth; nothing clipped, rotated or offset-block | Hard offset shadows, sticker shapes, torn paper |
+| **Motion inherits physics** | Springs animate from the current on-screen value, so a transition can be reversed mid-flight; nothing loops for effect | Fixed-duration tweens that cannot be interrupted, scroll-jacking, marquees |
+| **Accessible by construction** | Every text pair is documented with its contrast; focus and every state are always visible, and materials degrade to solid surfaces | Low-contrast pastels on a neutral canvas |
 
 ---
 
@@ -43,30 +43,30 @@ A concrete, implementable design system for **soft neo-brutalism**: warm paper s
 
 | Token | Hex | Use | Contrast notes |
 |---|---|---|---|
-| `--paper` | `#FBF7F0` | Page background | Base |
-| `--paper-raised` | `#FFFFFF` | Cards, inputs, popovers | vs ink 17.8:1 |
-| `--paper-sunk` | `#F4EDE0` | Section bands, table headers, inset areas | subtle step down |
-| `--paper-accent` | `#F1E4CC` | Hero panels, editorial blocks | |
-| `--ink` | `#141210` | Text, icons, the 3 px state rules | 17.8:1 on paper |
-| `--ink-2` | `#4A423A` | Secondary text | ~9.5:1 on paper |
-| `--ink-3` | `#6B6257` | Muted labels, placeholders (use ≥ 14 px medium) | 5.6:1 on paper, 4.8:1 on `--paper-accent` — passes AA on both, do not go lighter |
-| `--line` | `#E4DACB` | Card and table edges, dividers, page-section rules | — |
-| `--line-strong` | `#C9BCAA` | Inputs, secondary buttons, table-header rule, section rules | — |
-| `--line-soft` | `#ECE3D6` | Disabled controls, faint separators | decorative only |
+| `--paper` | `#F5F5F7` | Page canvas behind raised surfaces | Base |
+| `--paper-raised` | `#FFFFFF` | Cards, sheets, popovers, input focus | vs ink 16.9:1 |
+| `--paper-sunk` | `#ECECEF` | Filled fields, table headers, segmented tracks, steps | subtle step down |
+| `--paper-accent` | `#E8E8ED` | Secondary-button hover, tinted bands | |
+| `--ink` | `#1D1D1F` | Text, icons, the 3 px state rules | 15.5:1 on paper |
+| `--ink-2` | `#4A4A52` | Secondary text | ~8:1 on paper |
+| `--ink-3` | `#6E6E73` | Muted labels, placeholders (use ≥ 14 px medium) | 4.7:1 on paper, 5.1:1 on white — passes AA, do not go lighter |
+| `--line` | `#E3E3E8` | Card and table edges, dividers, page-section rules | — |
+| `--line-strong` | `#C9C9D0` | Hovered card edges, table-header rule, section rules | — |
+| `--line-soft` | `#EDEDF0` | Progress tracks, faint separators, disabled edges | decorative only |
 
 ### 3.2 Accents
 
 | Token | Fill | Text on fill | Use |
 |---|---|---|---|
-| `--cobalt` | `#2B4EFF` | `#FFFFFF` (5.7:1) | Primary actions, links, focus ring |
-| `--sunbeam` | `#FFC53D` | `--ink` (11.4:1) | Highlights, "exam tip" callouts, streaks |
-| `--leaf` | `#2F7A4F` | `#FFFFFF` (4.9:1) | Success, correct answers |
-| `--mint` | `#B7E4C7` | `--ink` | Success surfaces, correct-answer tint |
-| `--coral` | `#E23A2B` | `--ink` for ≥ 18 px bold only | Error surfaces, incorrect markers |
-| `--coral-ink` | `#A81E14` | — | Error **text** on paper (6.4:1) |
-| `--lilac` | `#C9B8FF` | `--ink` | Physics identity, secondary accent |
-| `--sky` | `#A9DCF0` | `--ink` | Geography identity, info surfaces |
-| `--blush` | `#FFC2D4` | `--ink` | English identity, playful accents |
+| `--cobalt` | `#0066CC` | `#FFFFFF` (5.6:1) | Primary actions, links, focus ring |
+| `--sunbeam` | `#FFD60A` | `--ink` (13:1) | Selection, highlights, "exam tip" tints |
+| `--leaf` | `#2F7A4F` | `#FFFFFF` (5.2:1) | Success, correct answers |
+| `--mint` | `#D8F3E3` | `--ink` | Success surfaces, correct-answer tint |
+| `--coral` | `#E23A2B` | `--ink` for ≥ 18 px bold only (3.9:1) | Error surfaces, incorrect markers |
+| `--coral-ink` | `#A81E14` | — | Error **text** on paper (6.7:1) |
+| `--lilac` | `#CBBFFF` | `--ink` | Physics identity, secondary accent |
+| `--sky` | `#B3E0F2` | `--ink` | Geography identity, info surfaces |
+| `--blush` | `#FFD3DD` | `--ink` | English identity, playful accents |
 
 **Rule:** fills are always paired with `--ink` or white text as documented. Never place `--ink-3` text on a coloured fill. Never use coral for large text blocks.
 
@@ -76,7 +76,7 @@ Each subject gets one identity colour, assigned at creation and unique within an
 
 | Token | Hex | Default assignment |
 |---|---|---|
-| `--subject-cobalt` | `#2B4EFF` | Maths |
+| `--subject-cobalt` | `#0066CC` | Maths |
 | `--subject-lilac` | `#7C5CFF` | Physics |
 | `--subject-leaf` | `#2F7A4F` | Chemistry |
 | `--subject-lime` | `#6F9E1F` | Biology (text-safe dark variant of `#8CC63F`) |
@@ -87,7 +87,7 @@ Each subject gets one identity colour, assigned at creation and unique within an
 | `--subject-sunbeam` | `#8A6000` | Economics (text-safe dark variant) |
 | `--subject-mauve` | `#8B3FA8` | Psychology |
 
-**Pairing rule:** each token has a `-fill` (a 14 % tint over paper) and a `-ink` (the value above). Badges use `-fill` background + `-ink` text. Large areas use `-fill` only; `-ink` is for text and 1 px accents.
+**Pairing rule:** each token has a `-fill` (a 16 % tint over paper) and a `-ink` (the value above). Badges use `-fill` background + `-ink` text. Large areas use `-fill` only; `-ink` is for text and 1 px accents.
 
 ### 3.4 Semantic mapping
 
@@ -112,12 +112,12 @@ Not in MVP (`OQ-DS1`). Tokens are defined as CSS custom properties on `:root` sp
 
 | Role | Family | Fallback | Why |
 |---|---|---|---|
-| Display | **Bricolage Grotesque** (variable, 400–800) | `ui-sans-serif, system-ui` | Tight, slightly quirky grotesque with editorial personality; distinct from default SaaS Inter |
-| Body | **Inter** (variable, 400–700) | `ui-sans-serif, system-ui` | Reliable at 17 px, excellent numerals for scores |
-| Editorial | **Instrument Serif** (400, italic) | `ui-serif, Georgia` | Pull quotes, topic intros, "why this matters" blocks |
+| Display | **System UI** (SF Pro on Apple platforms, Segoe UI Variable on Windows, Roboto on Android) | `ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto` | The platform's own face already ships optical sizing, tracking tables and legibility tuning; hierarchy comes from size and weight, not a second family |
+| Body | **System UI** (same stack) | as above | Reliable at 17 px with tabular numerals for scores |
+| Editorial | **Instrument Serif** (400, italic) | `ui-serif, Georgia` | One deliberate exception: pull quotes, topic intros, "why this matters" blocks |
 | Mono | **JetBrains Mono** (400–600) | `ui-monospace` | Code, formulas, answer keys in the studio |
 
-Loaded with `next/font` (self-hosted, `display: swap`, subset latin). No Google Fonts CDN request at runtime.
+Only Instrument Serif and JetBrains Mono are loaded with `next/font` (self-hosted, `display: swap`, subset latin); the interface faces come from the OS. No Google Fonts CDN request at runtime.
 
 ### 4.2 Scale
 
@@ -126,16 +126,16 @@ The three text tokens above `text-xl` are **fluid**: they interpolate with `clam
 | Token | Phone floor | Desktop cap | `clamp()` value | Line height | Track/use |
 |---|---|---|---|---|---|
 | `text-xs` | 12 | 12 | `0.75rem` | 1.4 | +0.01em · badges, meta |
-| `text-sm` | 14 | 14 | `0.875rem` | 1.45 | 0 · captions, table cells, helper text |
-| `text-base` | 17 | 17 | `1.0625rem` | 1.6 | 0 · **reading body** |
-| `text-lg` | 20 | 20 | `1.25rem` | 1.55 | −0.005em · lead paragraphs, card titles |
-| `text-xl` | 24 | 24 | `1.5rem` | 1.35 | −0.01em · card titles |
-| `text-2xl` | 24 | 30 | `clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem)` | 1.2 | −0.015em · section headings |
-| `text-3xl` | 32 | 38 | `clamp(2rem, 1.55rem + 1.9vw, 2.375rem)` | 1.1 | −0.02em · page titles |
-| `text-4xl` | 38 | 48 | `clamp(2.375rem, 1.6rem + 3.4vw, 3rem)` | 1.02 | −0.025em · topic/programme titles |
-| `text-5xl` | 44 | 64 | `clamp(2.75rem, 1.6rem + 4.6vw, 4rem)` | 0.98 | −0.03em · hero only, one per page |
+| `text-sm` | 14 | 14 | `0.875rem` | 1.5 | 0 · captions, table cells, helper text |
+| `text-base` | 17 | 17 | `1.0625rem` | 1.6 | −0.006em · **reading body** |
+| `text-lg` | 20 | 20 | `1.25rem` | 1.5 | −0.012em · lead paragraphs, card titles |
+| `text-xl` | 24 | 24 | `1.5rem` | 1.32 | −0.018em · card titles |
+| `text-2xl` | 26 | 30 | `clamp(1.625rem, 1.45rem + 0.7vw, 1.875rem)` | 1.2 | −0.022em · section headings |
+| `text-3xl` | 32 | 40 | `clamp(2rem, 1.5rem + 2vw, 2.5rem)` | 1.1 | −0.026em · page titles |
+| `text-4xl` | 38 | 52 | `clamp(2.375rem, 1.5rem + 3.6vw, 3.25rem)` | 1.04 | −0.031em · topic/programme titles |
+| `text-5xl` | 44 | 68 | `clamp(2.75rem, 1.5rem + 4.8vw, 4.25rem)` | 1 | −0.036em · hero only, one per page |
 
-Display headings use Bricolage at 600–800 with tight tracking. Body never goes below 17 px on content pages (14 px only in UI chrome). The clamping happens in tokens, never in a component: no `text-[2.7vw]` or per-page media queries for type.
+Display headings use the system face at 600–700 with tracking tightened by size; body never goes below 17 px on content pages (14 px only in UI chrome). The clamping happens in tokens, never in a component: no `text-[2.7vw]` or per-page media queries for type.
 
 ### 4.3 Rules
 
@@ -168,18 +168,18 @@ A page that needs a different gutter is a page with a layout bug, not a new padd
 
 | Token | Value | Use |
 |---|---|---|
-| `radius-xs` | 6 px | Badges, chips |
-| `radius-sm` | 10 px | Inputs, small buttons |
-| `radius-md` | 12 px | **Default**: cards, buttons, question options |
-| `radius-lg` | 16 px | Panels, modals, hero cards |
-| `radius-xl` | 24 px | Large editorial blocks (one per page max) |
-| `radius-full` | 9999 px | Pills, avatars, step dots |
+| `radius-xs` | 8 px | Badges, inner details |
+| `radius-sm` | 12 px | Inset panels, small custom surfaces |
+| `radius-md` | 14 px | **Default**: inputs, callouts, icon tiles, question options |
+| `radius-lg` | 20 px | Cards, sheets, modals, table shells |
+| `radius-xl` | 28 px | Large editorial blocks (one per page max) |
+| `radius-full` | 9999 px | Buttons, chips, pills, avatars, step dots |
 
-Nothing above 24 px except pills. A page with more than two `radius-xl` surfaces looks like a toy.
+Nothing above 28 px except pills, and nothing sharper than 8 px. A page with more than two `radius-xl` surfaces looks like a toy.
 
 ### 5.3 Border
 
-Structure is a **1 px warm hairline**. There is no 2 px border token: a heavier rule is a state marker, not a surface edge.
+Structure is a **1 px cool hairline**. There is no 2 px border token: a heavier rule is a state marker, not a surface edge.
 
 | Token | Use |
 |---|---|
@@ -190,7 +190,7 @@ Structure is a **1 px warm hairline**. There is no 2 px border token: a heavier 
 Two rules:
 
 - An interactive edge uses `--line-strong`, never `--line`: a control must read as a control at rest, without depending on its shadow.
-- 3 px rules are state only — the active tab underline and the studio's active-item inset rule — and the 4 px callout rule is the one decorative left edge. Never draw a 2 px ink border.
+- 3 px rules are state only — the studio's active-item inset rule and the callout's leading rule. Never draw a 2 px ink border, and never use a rule to draw a card edge: surfaces are separated by hairlines and depth.
 
 The codebase has no `--border-base` / `--border-bold` tokens; do not add them back.
 
@@ -200,17 +200,34 @@ Elevation is **soft and neutral**: a wide, low-opacity ink shadow that sits unde
 
 | Token | Value | Use |
 |---|---|---|
-| `shadow-sm` | `0 1px 2px rgb(20 18 16 / 0.06)` | Cards at rest, badges, the table shell |
-| `shadow-md` | `0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25)` | **Default raised**: hovered cards, sheets, skip links |
-| `shadow-lg` | `0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3)` | Modals and dropdowns |
+| `shadow-sm` | `0 1px 1px rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05)` | Cards at rest, badges, the table shell |
+| `shadow-md` | `0 2px 6px -2px rgb(0 0 0 / 0.08), 0 12px 28px -12px rgb(0 0 0 / 0.16)` | **Default raised**: hovered cards, sheets, skip links |
+| `shadow-lg` | `0 4px 14px -4px rgb(0 0 0 / 0.1), 0 32px 64px -24px rgb(0 0 0 / 0.24)` | Modals and dropdowns |
 
-There is no `shadow-subject`: a subject card carries its identity in the colour band and tint, and uses the same neutral elevation as every other card.
+There is no `shadow-subject`: a subject card carries its identity in the tinted icon tile and label, and uses the same neutral elevation as every other card.
+
+#### Materials
+
+Translucency is a functional layer, not decoration: chrome floats above the content it belongs to, and the content scrolling underneath is what gives the surface depth.
+
+| Token | Value | Use |
+|---|---|---|
+| `--material` | `rgb(255 255 255 / 0.72)` + `blur(22px) saturate(180%)` | Sticky header, studio top bar, studio sidebar |
+| `--material-strong` | `rgb(245 245 247 / 0.86)` + `blur(28px) saturate(180%)` | Mobile navigation sheets over busy content |
+| `--material-edge` | `rgb(255 255 255 / 0.6)` | The 1 px inset top edge — light catching the material |
+| `--scrim` | `rgb(29 29 31 / 0.24)` | The dimming layer behind a sheet |
+
+Three material rules:
+
+- **Never stack two materials.** A light translucent surface on another collapses legibility; a panel inside chrome is opaque `--paper-raised`.
+- **Bigger surfaces read thicker.** Sheets get the denser material and `shadow-lg`; the header gets `shadow-sm` and only after content is underneath it (a scroll edge effect, never a permanent divider at the top of a page).
+- **Degrade honestly.** `prefers-reduced-transparency: reduce` and `prefers-contrast: more` both replace every material with an opaque surface and drop the blur.
 
 **Interaction convention (important for consistency):**
 
-- Rest: `shadow-sm`, `translate(0,0)`
-- Hover: `translate(-1px,-1px)`, `shadow-sm` → `shadow-md` — **pointer-only** (see below)
-- Active: `translate(2px,2px)`; the shadow stays as it was
+- Rest: `shadow-sm`, `transform: none`
+- Hover: `translateY(-2px)`, `shadow-sm` → `shadow-md` — **pointer-only** (see below)
+- Active: surfaces `scale(0.985)`, buttons and chips `scale(0.97)` (`.press`); the shadow stays as it was
 - Disabled: `shadow-none`, `transform-none`, muted fill
 
 One shared `.lift` utility carries this convention for every interactive surface (buttons, card links, subject cards). It is defined in two media blocks:
@@ -265,7 +282,7 @@ Nothing switches at a width because a device is expected there; each rule above 
 
 #### 5.5.3 Container queries
 
-`SubjectCard` is the one component that must look right at two very different widths in the same viewport (three-up on the homepage shell, two-up inside the studio column). It therefore sets `container-type: inline-size` and responds to **its own** width: at ≤ 18 rem the body padding drops 24 → 16 px, the gap 20 → 14 px, and the title 20 → 17 px. The rule lives in `@layer components` because a Tailwind utility outside that layer would silently override it.
+`SubjectCard` is the one component that must look right at two very different widths in the same viewport (three-up on the homepage shell, two-up inside the studio column). It therefore sets `container-type: inline-size` and responds to **its own** width: at ≤ 18 rem the card padding drops 24 → 16 px, the inner gap 16 → 12 px, and the title 20 → 17 px. The rule lives in `@layer components` because a Tailwind utility outside that layer would silently override it.
 
 Use a container query, not a media query, whenever a component's correct layout depends on the space it is given rather than on the screen width.
 
@@ -294,20 +311,23 @@ Library: **Motion** (`motion/react`), used client-side only where a state change
 
 | Interaction | Spec |
 |---|---|
-| Answer select | Scale 1 → 0.98 → 1 over 140 ms; border colour change |
-| Option reveal (review) | Height/opacity 180 ms, `ease-out` |
-| Question advance | 160 ms opacity + 8 px x-translate; no 3D flip |
-| Progress fill | Width 240 ms `ease-out` |
-| Toast | 180 ms in, 120 ms out |
-| Dialog | 160 ms scale 0.98→1 + opacity |
-| Hover lift | 120 ms, 1 px translate + shadow step — pointer-only (`hover: hover` + `pointer: fine`) |
+| Press feedback | `.press` scale 0.97 on pointer-down (90 ms); `.lift` surfaces scale 0.985 |
+| Hover lift | 2 px rise + shadow step, 220 ms `cubic-bezier(0.22, 0.75, 0.28, 1)` — pointer-only (`hover: hover` + `pointer: fine`) |
+| Route change | Spring, `bounce: 0`, response 0.45 s, from 10 px below and `opacity: 0` |
+| Hero reveal | Spring, `bounce: 0`, response 0.6 s, staggered 60/120/180 ms |
+| Option reveal (review) | Spring height + opacity, `bounce: 0`, response 0.4 s |
+| Sheet entrance | Materialise: opacity + 8 px rise + 6 px blur ramp, 280 ms |
+| Progress fill | Width 320 ms `ease-out` (a single layout-safe property) |
+| Answer select | Scale 0.98 while held; border colour change |
 
 Rules:
-- Durations: 120 ms (micro), 180 ms (standard), 240 ms (emphasis). No transition above 320 ms.
-- Easing: `cubic-bezier(0.2, 0.6, 0.2, 1)`. No bounce, no spring overshoot, no elastic.
+- **Springs, not fixed-duration tweens, for anything a user can interrupt.** All Motion springs use `type: "spring"`, `bounce: 0` (critically damped, no overshoot) except a momentum-driven gesture, which may use `bounce: 0.2`.
+- **Animate from the current on-screen value.** A spring re-targeted mid-flight continues from where the surface is, so a transition can be reversed without a jump.
+- Durations on CSS transitions: 90 ms (press), 200–220 ms (micro), 280–320 ms (emphasis). No transition above 320 ms.
+- Easing: `cubic-bezier(0.22, 0.75, 0.28, 1)` for CSS state changes.
 - `prefers-reduced-motion: reduce` removes transforms and reduces all durations to 0.01 ms while keeping state changes instant and visible.
-- Never animate layout properties that cause reflow on long lists; use opacity/transform only.
-- No animation on page load beyond the hero's 240 ms fade+rise, which must not delay LCP text.
+- Never animate layout properties that cause reflow on long lists; use opacity/transform only (the one height animation is the short `Disclosure` panel).
+- No animation on page load beyond the hero's spring fade+rise, which must not delay LCP text.
 
 ---
 
@@ -316,40 +336,48 @@ Rules:
 ```css
 /* app/globals.css — source of truth for token values */
 :root {
-  --paper: #FBF7F0;
+  --paper: #F5F5F7;
   --paper-raised: #FFFFFF;
-  --paper-sunk: #F4EDE0;
-  --paper-accent: #F1E4CC;
+  --paper-sunk: #ECECEF;
+  --paper-accent: #E8E8ED;
 
-  --ink: #141210;
-  --ink-2: #4A423A;
-  --ink-3: #6B6257;
-  --line: #E4DACB;
-  --line-strong: #C9BCAA;
-  --line-soft: #ECE3D6;
-  --shadow-color: #E8DFD1; /* flat fill behind hero line art (§6) */
+  --ink: #1D1D1F;
+  --ink-2: #4A4A52;
+  --ink-3: #6E6E73;
+  --line: #E3E3E8;
+  --line-strong: #C9C9D0;
+  --line-soft: #EDEDF0;
+  --shadow-color: #E6E6EA; /* flat fill behind hero line art (§6) */
 
-  --cobalt: #2B4EFF;
-  --sunbeam: #FFC53D;
+  --cobalt: #0066CC;
+  --sunbeam: #FFD60A;
   --leaf: #2F7A4F;
-  --mint: #B7E4C7;
+  --mint: #D8F3E3;
   --coral: #E23A2B;
   --coral-ink: #A81E14;
-  --lilac: #C9B8FF;
-  --sky: #A9DCF0;
-  --blush: #FFC2D4;
+  --lilac: #CBBFFF;
+  --sky: #B3E0F2;
+  --blush: #FFD3DD;
 
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 
-  --shadow-sm: 0 1px 2px rgb(20 18 16 / 0.06);
+  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05);
   --shadow-md:
-    0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25);
+    0 2px 6px -2px rgb(0 0 0 / 0.08), 0 12px 28px -12px rgb(0 0 0 / 0.16);
   --shadow-lg:
-    0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3);
+    0 4px 14px -4px rgb(0 0 0 / 0.1), 0 32px 64px -24px rgb(0 0 0 / 0.24);
+
+  /* Materials (§5.4). Never stack one on another. */
+  --material: rgb(255 255 255 / 0.72);
+  --material-strong: rgb(245 245 247 / 0.86);
+  --material-blur: 22px;
+  --material-saturate: 180%;
+  --material-edge: rgb(255 255 255 / 0.6);
+  --scrim: rgb(29 29 31 / 0.24);
 
   /* No --border-* tokens: structure is a 1 px hairline (§5.3). */
 
@@ -371,10 +399,10 @@ Rules:
 
 /* Fluid display type (§4.2): the clamp lives in the token, never in a component. */
 @theme inline {
-  --text-2xl: clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem);
-  --text-3xl: clamp(2rem, 1.55rem + 1.9vw, 2.375rem);
-  --text-4xl: clamp(2.375rem, 1.6rem + 3.4vw, 3rem);
-  --text-5xl: clamp(2.75rem, 1.6rem + 4.6vw, 4rem);
+  --text-2xl: clamp(1.625rem, 1.45rem + 0.7vw, 1.875rem);
+  --text-3xl: clamp(2rem, 1.5rem + 2vw, 2.5rem);
+  --text-4xl: clamp(2.375rem, 1.5rem + 3.6vw, 3.25rem);
+  --text-5xl: clamp(2.75rem, 1.5rem + 4.8vw, 4.25rem);
 }
 ```
 
@@ -391,15 +419,16 @@ theme: {
       cobalt: 'var(--cobalt)', sunbeam: 'var(--sunbeam)', leaf: 'var(--leaf)',
       mint: 'var(--mint)', coral: 'var(--coral)', lilac: 'var(--lilac)', sky: 'var(--sky)', blush: 'var(--blush)',
     },
-    borderRadius: { xs: '6px', sm: '10px', md: '12px', lg: '16px', xl: '24px' },
+    borderRadius: { xs: '8px', sm: '12px', md: '14px', lg: '20px', xl: '28px' },
     boxShadow: {
-      sm: '0 1px 2px rgb(20 18 16 / 0.06)',
-      md: '0 1px 3px rgb(20 18 16 / 0.07), 0 10px 24px -16px rgb(20 18 16 / 0.25)',
-      lg: '0 2px 6px rgb(20 18 16 / 0.06), 0 20px 40px -24px rgb(20 18 16 / 0.3)',
+      sm: '0 1px 1px rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05)',
+      md: '0 2px 6px -2px rgb(0 0 0 / 0.08), 0 12px 28px -12px rgb(0 0 0 / 0.16)',
+      lg: '0 4px 14px -4px rgb(0 0 0 / 0.1), 0 32px 64px -24px rgb(0 0 0 / 0.24)',
     },
     fontFamily: {
-      display: ['var(--font-bricolage)', 'ui-sans-serif'],
-      sans: ['var(--font-inter)', 'ui-sans-serif'],
+      // One system stack for display and body; the serif and mono are the only downloads.
+      display: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto'],
+      sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto'],
       editorial: ['var(--font-instrument)', 'ui-serif'],
       mono: ['var(--font-jetbrains)', 'ui-monospace'],
     },
@@ -418,9 +447,10 @@ Each component lists anatomy, variants and constraints. Implementations live in 
 ### 9.1 Button
 
 - **Anatomy:** label (required), optional leading icon, optional trailing icon.
-- **Variants:** `primary` (cobalt fill, white text), `secondary` (paper-raised fill, ink border, ink text), `sunbeam` (highlight CTA, ink text), `ghost` (no border until hover), `danger` (paper-raised fill, coral border + coral-ink text).
-- **Sizes:** `sm` (h 36, px 12, text-sm), `md` (h 44, px 16, text-base), `lg` (h 52, px 24, text-lg).
-- **States:** rest / hover / active / focus-visible / disabled / loading (spinner replaces the leading icon, label becomes "Saving…" or stays — never both a spinner and an unchanged label).
+- **Shape:** a full pill (`radius-full`). Buttons and chips are the only surfaces that are fully round.
+- **Variants:** `primary` (cobalt fill, white text), `secondary` (paper-sunk fill, ink text — no border), `sunbeam` (sunbeam/30 fill, ink text). A destructive action uses `secondary` styling with `coral-ink` text rather than a red fill.
+- **Sizes:** `sm` (h 36, px 16, text-sm), `md` (h 44, px 20, text-base), `lg` (h 52, px 28, text-base).
+- **States:** rest / hover (brightness or a step darker) / active (`scale(0.97)` on contact) / focus-visible / disabled / loading (spinner replaces the leading icon, label becomes "Saving…" or stays — never both a spinner and an unchanged label).
 - **Rules:** one `primary` per viewport region; icon-only buttons require `aria-label`; loading disables the button and prevents double submit.
 
 ### 9.2 Answer option (the signature component)
@@ -433,13 +463,13 @@ Each component lists anatomy, variants and constraints. Implementations live in 
 
 ### 9.3 Badge / Pill
 
-- `Badge`: uppercase, `text-xs`, `radius-xs`, 1 px border in a tint of its fill, ink text. Variants: `status-draft` (paper-sunk), `status-review` (sunbeam), `status-published` (mint), `status-archived` (line-soft), `difficulty-easy|medium|hard|very-hard` (leaf → sunbeam → coral tint ramp), `subject` (subject tint), `type` (paper-raised), and the three **format** variants below.
+- `Badge`: sentence case, `text-xs`, `radius-full`, a soft tint fill with a matching hairline, ink text. Variants: `status-draft` (paper-sunk), `status-review` (sunbeam), `status-published` (mint), `status-archived` (line-soft), `difficulty-easy|medium|hard|very-hard` (leaf → sunbeam → coral tint ramp), `subject` (subject tint), `type` (paper-raised), and the three **format** variants below.
 - `FormatBadge`: the one component allowed to describe content shape. `format-study` (paper-raised, book icon, "Study material"), `format-lesson` (sunbeam fill, ink border, layered icon, "Lesson + practice"), `format-test` (cobalt tint, timer icon, "Practice test"). Never colour-only: each has a distinct icon and label. A page must not invent a fourth label.
 - Max 3 words. Never a badge without text.
 
 ### 9.4 Card
 
-- `SubjectCard`: subject colour band (8 px) on the top edge, icon, name, level label, chapter/topic counts, hover lift. Whole card is a link with a single accessible name.
+- `SubjectCard`: tinted icon tile in the subject colour, name, level and group label, a cobalt action line, hover lift. Whole card is a link with a single accessible name; the identity never depends on a colour band.
 - `ChapterRow`: number, title, summary, topic count, availability dots, chevron.
 - `TopicCard`: title, summary, format badges, estimated minutes, resource/assessment counts.
 - `ResourceCard`: title, subtitle, `FormatBadge`, reading minutes, difficulty dot, chevron.
@@ -449,27 +479,27 @@ Each component lists anatomy, variants and constraints. Implementations live in 
 
 ### 9.5 Callout
 
-Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warning` (coral tint + coral-ink heading), `example` (paper-accent + ink), `examtip` (cobalt tint + cobalt heading), `definition` (mint). Always: icon + label text ("Exam tip") + body. Left border 4 px in the kind colour, paper-raised fill, `radius-sm`.
+Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam tint), `warning` (blush tint + coral-ink label), `example` (paper-sunk), `examtip` (cobalt tint + cobalt label), `definition` (mint tint). Always: label text ("Exam tip") + body. A tinted panel with a 3 px leading rule in the kind colour and `radius-md`; no icon is required because the label is always present.
 
 ### 9.6 Form controls
 
-- `TextInput` / `Textarea` / `Select`: paper-raised, 1 px `--line-strong` edge, `radius-sm`, h 44 (textarea auto-grow), 12 px padding. Focus: cobalt 3 px outline offset 2 px. Error: coral border + icon + message below, `aria-describedby` linked.
+- `TextInput` / `Textarea` / `Select`: a filled `paper-sunk` well with no border, `radius-md`, h 44 (textarea auto-grow), 16 px padding. Hover steps the fill to `--line-soft`; focus raises it to `paper-raised` with `shadow-sm` plus the cobalt 3 px outline. Error: coral border + message below, `aria-describedby` linked.
 - `FormField`: label (always visible, never placeholder-only), optional hint, error slot, required marker.
 - `Checkbox` / `Radio` / `Switch`: 20 px box with an ink hairline edge; checked = cobalt fill + white tick.
 - Rule: validation messages appear **below** the field and are announced via `aria-live="polite"`.
 
 ### 9.7 Navigation
 
-- `Header`: 72 px tall (64 mobile), paper background with a 1 px `--line` bottom rule, logo left, nav centre-left, search + account right. Sticky with a shadow that appears only after 8 px of scroll.
+- `Header`: 68 px tall (64 mobile), a translucent `--material` surface whose content scrolls underneath, logo left, pill nav links, search + account right. Sticky; its hairline and `shadow-sm` appear only once content is beneath it, so the top of a page has no divider. Falls back to an opaque surface under `prefers-reduced-transparency`.
 - `Breadcrumbs`: `text-sm`, `ink-2`, `/` separators (not `>`), current page in `ink` with `aria-current`.
-- `Tabs`: underline-style with a 3 px ink underline on the active tab; used for topic hub sections and studio editors.
+- `Tabs`: a segmented control — a `paper-sunk` pill track with the active segment raised on white and carrying `shadow-sm`; used for topic hub sections and studio editors.
 - `Sidebar` (studio): **264 px** (`--sidebar-w`), paper surface, 1 px right rule, grouped links (Content / Library / Governance), active item = paper-sunk fill + 3 px inset ink rule + `aria-current="page"`. It is persistent — sticky, full viewport height, independently scrolling — from **1024 px** (`lg`) up. It never shrinks into an icon rail: below 1024 px it is replaced by a sheet.
 - `StudioMobileMenu` (the studio sheet, below 1024 px): a sticky 64 px top bar with the wordmark and a 44 × 44 menu button, opening a full-width sheet docked under the bar (`max-height: calc(100dvh − 4rem)`, scrollable, `shadow-md`) over an ink-tinted scrim. It is a native `<details>` with Escape, outside-click and route-change dismissal, so it works without JavaScript. No focus trap is claimed for it; it is a disclosure, not a modal dialog.
 - `QuestionPalette`: numbered grid, states: current (ink border + cobalt), answered (sunbeam), unanswered (paper), flagged (dashed). Shown as a bottom sheet under 768 px.
 
 ### 9.8 Feedback
 
-- `ProgressBar`: 10 px tall, `paper-sunk` track, `radius-full` fill in the subject colour, `role="progressbar"` with `aria-valuenow/min/max` and an accessible label.
+- `ProgressBar`: 6 px tall, `line-soft` track, `radius-full` fill in the subject colour, `role="progressbar"` with `aria-valuenow/min/max` and an accessible label.
 - `Toast`: bottom-right (desktop) / top (mobile), `shadow-lg`, 4 s auto-dismiss, dismiss button, `role="status"`.
 - `Dialog`: paper-raised, 1 px `--line` edge, `radius-lg`, `shadow-lg`, focus trapped, `Esc` closes, returns focus to the trigger.
 - `EmptyState`: illustration ≤ 160 px, heading, one sentence, primary action, optional secondary link.
@@ -510,7 +540,7 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam), `warni
 |---|---|
 | Body text contrast | ≥ 4.5:1 (all pairs documented in §3) |
 | Large text (≥ 24 px / 19 px bold) | ≥ 3:1 |
-| Non-text UI (borders of inputs, icons) | ≥ 3:1 against adjacent colour |
+| State-bearing non-text UI (focus ring, selected/invalid borders, result icons) | ≥ 3:1 against adjacent colour; passive hairlines are separators and carry no state |
 | Focus indicator | 3 px cobalt outline, 2 px offset, never removed |
 | Touch targets | ≥ 44 × 44 px, ≥ 8 px spacing |
 | Text resize | Usable at 200 % zoom and 150 % text-only |
@@ -528,8 +558,8 @@ Contrast is verified at implementation time with an automated check, but the **p
 | Do | Don't |
 |---|---|
 | One bold display heading, then quiet body text | Three competing headline styles |
-| 1 px hairlines, weighted `--line` → `--line-strong` for controls | Borders on every row of text |
-| Soft neutral shadows on 1–2 levels | Glows, coloured shadows, glass panels |
+| 1 px hairlines that separate, with depth doing the shaping | Borders on every row of text |
+| Diffuse neutral shadows on 1–2 levels | Glows, coloured shadows, two materials stacked |
 | One accent colour per section plus subject colour | Multiple accent gradients |
 | 12 px card radius with 20–24 px padding | 32 px radius with 8 px padding |
 | Illustrations that explain the topic | Generic decorative blobs and floating shapes |
@@ -577,7 +607,7 @@ Contrast is verified at implementation time with an automated check, but the **p
 7. The reduced-motion and 200 % zoom builds remain usable with no clipped text.
 8. A subject card renders in its subject colour purely from `--subject-*` variables, with no per-subject CSS.
 9. The print stylesheet produces a readable material page.
-10. A visual review against §2's principles rejects any gradient, glass panel, coloured glow, hard offset shadow or rotation.
+10. A visual review against §2's principles rejects any gradient, coloured glow, hard offset shadow, rotation, or a material stacked on another material.
 11. Every page's horizontal padding comes from `--gutter` and its vertical rhythm from `--section-y`; no page hard-codes `px-4`, `py-24` or a similar fixed value at the shell level.
 12. `documentElement.scrollWidth − clientWidth` is 0 at 320, 360, 390, 414, 480, 768, 1024, 1280, 1440 and 1920 px on `/`, `/subjects`, the studio library and the studio editor.
 13. Below 768 px no studio table is visible and its card list is; above 768 px the reverse. The visible representation fits its container without horizontal scrolling.
@@ -592,7 +622,7 @@ Contrast is verified at implementation time with an automated check, but the **p
 | # | Question | Impact |
 |---|---|---|
 | OQ-DS1 | Is dark mode required within 12 months? | Token structure already supports it; QA effort not scheduled — **Open — needs:** decide whether dark mode ships within 12 months; **blocks Phase 7**. |
-| OQ-DS2 | Do we license Bricolage Grotesque / Instrument Serif, or substitute open alternates (e.g. Archivo, Fraunces)? | Licensing & brand feel — **Open — needs:** confirm font licences or choose open alternates; **blocks Phase 1**. |
+| OQ-DS2 | Do we keep Instrument Serif for editorial blocks, or drop the serif and run the system face throughout? | Brand feel vs. download weight — **Open — needs:** decide whether the editorial serif stays; **blocks Phase 1**. |
 | OQ-DS3 | Is a custom illustration set commissioned, or do we start with two-colour generated line art? | Phase 1 asset plan — **Open — needs:** decide commissioned vs generated illustration set; **blocks Phase 1**. |
 | OQ-DS4 | Should subject colour assignment be editorial or automatic round-robin? | Currently: chosen at creation, unique per level — **Open — needs:** decide editorial vs automatic subject colours; this also settles the `color_token` uniqueness conflict; **blocks Phase 2**. |
 | OQ-DS5 | Is a marketing-specific hero treatment (larger type, more illustration) needed beyond the content design system? | Homepage design scope — **Open — needs:** decide whether the homepage needs a marketing hero beyond the design system; **blocks Phase 1**. |

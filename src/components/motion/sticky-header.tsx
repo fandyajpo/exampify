@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Sticky header shell (DESIGN_SYSTEM.md §9.7): the shadow appears only after 8 px of scroll.
- * A client leaf by necessity — the nav itself is still server-rendered children.
+ * Sticky header shell (DESIGN_SYSTEM.md §5.4, §9.7): the bar is a translucent material with
+ * content scrolling beneath it, and the hairline plus shadow only appear once content is
+ * actually underneath — a scroll edge effect, not a permanent divider at the top of a page.
  */
 import { useMotionValueEvent, useScroll } from "motion/react";
 import { useState, type ReactNode } from "react";
@@ -13,14 +14,14 @@ export function StickyHeader({ children }: { children: ReactNode }): React.JSX.E
   const [isScrolled, setIsScrolled] = useState(false);
 
   useMotionValueEvent(scrollY, "change", (value) => {
-    setIsScrolled(value > 8);
+    setIsScrolled(value > 4);
   });
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-line-strong bg-paper transition-shadow duration-[180ms] ease-[cubic-bezier(0.2,0.6,0.2,1)]",
-        isScrolled && "shadow-sm",
+        "material sticky top-0 z-40 border-b transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)]",
+        isScrolled ? "border-line shadow-sm" : "border-transparent shadow-none",
       )}
     >
       {children}
