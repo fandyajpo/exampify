@@ -22,6 +22,7 @@ const TAG_DESCRIPTIONS: Record<string, string> = {
   meta: "Health and the document itself.",
   analytics: "Client-side product events.",
   internal: "Worker and cron endpoints; authenticated by signature or bearer token, never a session.",
+  practice: "Student practice and attempts. Session-authenticated and email-verified; every row is owned by the caller.",
   studio: "Authoring studio. Session-authenticated; reads need `author`+, taxonomy writes need `admin`.",
 };
 

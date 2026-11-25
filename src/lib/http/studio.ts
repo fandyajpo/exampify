@@ -4,8 +4,11 @@ import type { z } from "zod";
 import { requireCapability } from "@/lib/auth/actor";
 import type { Actor, Capability } from "@/lib/rbac";
 
-import { HttpError, type ErrorDetail } from "./errors";
+import { HttpError } from "./errors";
 import { isSameOriginRequest } from "./origin";
+import { failure, validationFailure, type RouteParams } from "./respond";
+
+export type { RouteParams } from "./respond";
 
 /**
  * The studio route guard (`API_CONTRACTS.md` §2, §7; `SECURITY_AND_PERMISSIONS.md` §3.1).
@@ -22,8 +25,6 @@ import { isSameOriginRequest } from "./origin";
  * Handlers stay thin: parse, call one service, return `{ data }`.
  */
 
-export type RouteParams = Record<string, string>;
-
 export type StudioContext<P extends RouteParams = RouteParams> = {
   actor: Actor;
   params: P;
@@ -31,44 +32,6 @@ export type StudioContext<P extends RouteParams = RouteParams> = {
 };
 
 type RouteContext<P> = { params: Promise<P> };
-
-function errorResponse(
-  status: number,
-  body: Record<string, unknown>,
-  requestId: string,
-): NextResponse {
-  return NextResponse.json(
-    { error: { ...body, requestId } },
-    { status, headers: { "Cache-Control": "no-store", "x-request-id": requestId } },
-  );
-}
-
-function failure(error: unknown, requestId: string): NextResponse {
-  if (error instanceof HttpError) {
-    return errorResponse(
-      error.status,
-      {
-        code: error.code,
-        message: error.message,
-        ...(error.details ? { details: error.details } : {}),
-        ...(error.meta ?? {}),
-      },
-      requestId,
-    );
-  }
-
-  // Anything unexpected is a 500 with a generic message: the details go to the log, not to
-  // the client (`SEC §7.2`).
-  console.error(
-    JSON.stringify({
-      level: "error",
-      event: "studio_route_failed",
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-    }),
-  );
-  return errorResponse(500, { code: "INTERNAL_ERROR", message: "Something went wrong." }, requestId);
-}
 
 export function studio<P extends RouteParams = RouteParams>(
   capability: Capability,
@@ -93,26 +56,6 @@ export function studio<P extends RouteParams = RouteParams>(
       return failure(error, requestId);
     }
   };
-}
-
-/**
- * The one mapping from a failed `.strict()` parse to the documented refusal: a body or query
- * made entirely of unknown keys is `UNKNOWN_FIELD`, anything else is a field-level
- * `VALIDATION_ERROR` (§10).
- */
-function validationFailure(error: z.ZodError, root: "body" | "query"): HttpError {
-  const details: ErrorDetail[] = error.issues.slice(0, 20).map((issue) => ({
-    path: issue.path.length > 0 ? issue.path.join(".") : root,
-    code: issue.code,
-    message: issue.message,
-  }));
-
-  return new HttpError(
-    422,
-    error.issues.every((issue) => issue.code === "unrecognized_keys") ? "UNKNOWN_FIELD" : "VALIDATION_ERROR",
-    root === "body" ? "Some fields need attention." : "Some query parameters need attention.",
-    details,
-  );
 }
 
 /** A parsed, `.strict()`-validated JSON body, or the documented refusal. */

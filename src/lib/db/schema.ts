@@ -254,6 +254,61 @@ export interface ResourceAssessmentsTable {
   position: number;
 }
 
+export type AttemptSource = "topic" | "chapter" | "subject" | "assessment" | "resource";
+export type AttemptStatus = "in_progress" | "submitted" | "abandoned" | "expired";
+
+/**
+ * One run through an assessment or a generated practice set (`DATABASE_SCHEMA.md` §9.1).
+ * `config` is immutable JSON written at creation; the snapshot lives in `attempt_items`, so
+ * a later edit to a question never changes what an attempt was scored against.
+ */
+export interface AssessmentAttemptsTable {
+  id: string;
+  user_id: string;
+  source: AttemptSource;
+  assessment_id: string | null;
+  resource_id: string | null;
+  subject_id: string;
+  chapter_id: string | null;
+  topic_id: string | null;
+  config: string;
+  question_count: number;
+  status: AttemptStatus;
+  started_at: number;
+  last_activity_at: number;
+  expires_at: number;
+  submitted_at: number | null;
+  answered_count: number;
+  correct_count: number;
+  score_x100: number;
+  max_score_x100: number;
+  score_percent_x100: number | null;
+  duration_seconds: number | null;
+  idempotency_key: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+/**
+ * The per-question snapshot (`DATABASE_SCHEMA.md` §9.2): which question at which version,
+ * for how many points. The stem, options and key are never copied here (ADR-005), so review
+ * reads current text and flags a version difference instead.
+ */
+export interface AttemptItemsTable {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  question_version: number;
+  position: number;
+  points_x100_max: number;
+  selected_answer: string | null;
+  is_correct: number | null;
+  points_x100_awarded: number | null;
+  feedback: string | null;
+  response_ms: number | null;
+  answered_at: number | null;
+}
+
 /** Changed public paths (`DATABASE_SCHEMA.md` §10.5); `source_path` may be a subtree prefix. */
 export interface RedirectsTable {
   id: string;
@@ -331,4 +386,6 @@ export interface Database {
   email_suppressions: EmailSuppressionsTable;
   audit_logs: AuditLogsTable;
   job_runs: JobRunsTable;
+  assessment_attempts: AssessmentAttemptsTable;
+  attempt_items: AttemptItemsTable;
 }

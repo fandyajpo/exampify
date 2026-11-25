@@ -22,6 +22,7 @@ type SessionUser = {
   role?: string | null;
   status?: string | null;
   deletedAt?: number | null;
+  emailVerified?: boolean | null;
 };
 
 /** The actor for this request, or `null` when there is no usable session. */
@@ -42,6 +43,26 @@ export async function requireActor(): Promise<Actor> {
   const actor = await getActor();
   if (!actor) throw unauthenticated();
   return actor;
+}
+
+/**
+ * The actor, or the documented refusal when the address is not verified yet
+ * (`API_CONTRACTS.md` §5, `SEC §4.3`). Sign-in is allowed before verification — practice is
+ * what waits, so this is the gate every attempt endpoint goes through.
+ */
+export async function requireVerifiedActor(): Promise<Actor> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw unauthenticated();
+
+  const user = session.user as SessionUser;
+  if (user.deletedAt != null || (user.status != null && user.status !== "active")) {
+    throw unauthenticated();
+  }
+  if (user.emailVerified !== true) {
+    throw new HttpError(401, "EMAIL_NOT_VERIFIED", "Verify your email address to start practising.");
+  }
+
+  return { id: user.id, role: isRole(user.role) ? user.role : "student" };
 }
 
 /** The actor, or a `403` when the capability is missing (`SEC §3.1`: deny, never throw raw). */

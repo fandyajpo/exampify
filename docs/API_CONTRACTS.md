@@ -263,7 +263,7 @@ type StudentQuestion = {
 - `email_verified` required ⇒ `401 EMAIL_NOT_VERIFIED`.
 - Empty pool ⇒ `422 NO_QUESTIONS_MATCH` with `{ appliedFilters }`.
 - Smaller pool than requested ⇒ `201` with `questionCount < requestedCount`; never an error.
-- `Idempotency-Key` replayed within 10 min ⇒ the original attempt, `200`.
+- `Idempotency-Key` replayed ⇒ the original attempt, `200`. The key is permanent per user (`UNIQUE (user_id, idempotency_key)`), so a retry never creates a second attempt and reusing a key after a long gap returns the first one.
 - `test`/`mock` requires `durationSeconds`; `expiresAt` = min(24 h inactivity, duration).
 - **Never** includes `answer_key`, explanation, per-option feedback, or the topic href.
 

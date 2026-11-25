@@ -69,6 +69,7 @@ import {
 } from "@/lib/validation/assessments";
 import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
+import { attemptEnvelopeSchema, createAttemptSchema } from "@/lib/validation/attempts";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
 
@@ -85,7 +86,7 @@ import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
  * describe the whole surface ahead of the code.
  */
 
-export type OpenApiTag = "meta" | "analytics" | "internal" | "studio";
+export type OpenApiTag = "meta" | "analytics" | "internal" | "practice" | "studio";
 
 /** The methods a route handler may export. `lib/openapi/routes.ts` scans for the same list. */
 export const METHODS = ["get", "post", "patch", "delete"] as const;
@@ -339,6 +340,35 @@ const OVERVIEW_ROUTES: Operation[] = [
       { status: 200, description: "Counts, gaps and recent edits.", schema: studioOverviewEnvelopeSchema },
       error(401),
       error(403),
+    ],
+  },
+];
+
+/** `§5`: the student attempt surface. Session-authenticated and email-verified. */
+const ATTEMPT_ROUTES: Operation[] = [
+  {
+    method: "post",
+    path: "/api/v1/attempts",
+    operationId: "create-attempt",
+    summary: "Start a practice set or an assessment",
+    description:
+      "Any signed-in, email-verified student. The body names a scope — a curated `assessment`, a `topic`/`chapter`/`subject` with a selection rule, or the `assessment` linked to a `resource` — and the server chooses the questions; a client never sends a question id. " +
+      "Each item is snapshotted with its question version and points, so a later content edit cannot change what this attempt is scored against. " +
+      "A pool smaller than `questionCount` is a `201` with both counts, never an error; an empty pool is `422 NO_QUESTIONS_MATCH` with `appliedFilters`. " +
+      "An `Idempotency-Key` that already produced an attempt returns that attempt with `200` instead of creating a second one. " +
+      "The response never carries `answer_key`, an explanation or per-option feedback.",
+    tag: "practice",
+    request: createAttemptSchema,
+    responses: [
+      { status: 201, description: "The attempt and its snapshotted questions.", schema: attemptEnvelopeSchema },
+      { status: 200, description: "The attempt an `Idempotency-Key` already created.", schema: attemptEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+      { status: 404, description: "The scope does not exist or is not published." },
+      {
+        status: 422,
+        description: "`VALIDATION_ERROR`, `UNKNOWN_FIELD`, or `NO_QUESTIONS_MATCH` with `appliedFilters`.",
+      },
     ],
   },
 ];
@@ -1068,6 +1098,7 @@ export const OPERATIONS: readonly Operation[] = [
       ...WRITE_ERRORS,
     ],
   },
+  ...ATTEMPT_ROUTES,
   ...RESOURCE_ROUTES,
   ...QUESTION_ROUTES,
   ...ASSESSMENT_ROUTES,
