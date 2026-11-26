@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { readJson } from "@/lib/http/studio";
+import { readJson, readQuery } from "@/lib/http/studio";
 import { student } from "@/lib/http/student";
-import { createAttempt } from "@/lib/services/attempts";
-import { createAttemptSchema } from "@/lib/validation/attempts";
+import { createAttempt, listAttempts } from "@/lib/services/attempts";
+import { attemptListQuerySchema, createAttemptSchema } from "@/lib/validation/attempts";
 
 /**
  * `POST /api/v1/attempts` (`API_CONTRACTS.md` §5.1).
@@ -16,6 +16,16 @@ import { createAttemptSchema } from "@/lib/validation/attempts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * `GET /api/v1/attempts` (`API_CONTRACTS.md` §5.5): the caller's history, newest first.
+ * Filters `status`, `subjectId`, `topicId`, `from` and `to` (on `startedAt`); `limit` is
+ * 1–50 with an opaque `cursor`, and the page carries the §10 envelope.
+ */
+export const GET = student(async ({ actor, request }) => {
+  const page = await listAttempts(actor, readQuery(attemptListQuerySchema, request));
+  return NextResponse.json(page);
+});
 
 export const POST = student(async ({ actor, request }) => {
   const input = await readJson(createAttemptSchema, request);

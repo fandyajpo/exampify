@@ -71,6 +71,8 @@ import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
 import {
   attemptEnvelopeSchema,
+  attemptListQuerySchema,
+  attemptListSchema,
   createAttemptSchema,
   resumeEnvelopeSchema,
   saveAnswersEnvelopeSchema,
@@ -380,6 +382,22 @@ const ATTEMPT_ROUTES: Operation[] = [
   },
   {
     method: "get",
+    path: "/api/v1/attempts",
+    operationId: "list-attempts",
+    summary: "List the caller's attempts",
+    description:
+      "Any signed-in, email-verified student; the list is always the caller's own. Newest first by `startedAt`, keyed on `(startedAt, id)` for a stable cursor. " +
+      "Filters `status`, `subjectId`, `topicId` and a `from`/`to` window on `startedAt`; `limit` is 1–50. `scorePercent` is a percentage and `null` until the attempt is graded.",
+    tag: "practice",
+    request: attemptListQuerySchema,
+    responses: [
+      { status: 200, description: "One page of attempt summaries.", schema: attemptListSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 422, description: "`VALIDATION_ERROR` or `INVALID_CURSOR`." },
+    ],
+  },
+  {
+    method: "get",
     path: "/api/v1/attempts/{attemptId}",
     operationId: "resume-attempt",
     summary: "Resume an attempt",
@@ -451,6 +469,24 @@ const ATTEMPT_ROUTES: Operation[] = [
       { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
       { status: 404, description: "The attempt does not exist, or belongs to another student." },
       { status: 409, description: "`INVALID_TRANSITION` until the attempt is submitted." },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/attempts/{attemptId}/retry",
+    operationId: "retry-attempt",
+    summary: "Retry an attempt",
+    description:
+      "Any signed-in, email-verified student, on their own finished attempt. No body. Rebuilds the §5.1 request from the stored config and resolves today's published content with a fresh seed, so the new attempt never reuses the old snapshot. " +
+      "An attempt still in progress is `409 INVALID_TRANSITION`; a stored config that no longer parses is `422 ATTEMPT_NOT_RETRYABLE`; a scope that is gone is `404`.",
+    tag: "practice",
+    responses: [
+      { status: 201, description: "The new attempt and its questions.", schema: attemptEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+      { status: 404, description: "The attempt or its scope does not exist, or belongs to another student." },
+      { status: 409, description: "`INVALID_TRANSITION` while the attempt is still in progress." },
+      { status: 422, description: "`ATTEMPT_NOT_RETRYABLE` or `NO_QUESTIONS_MATCH`." },
     ],
   },
   {

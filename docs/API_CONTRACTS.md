@@ -364,6 +364,8 @@ type ReviewItem = {
 
 - `abandon` is idempotent: an already abandoned attempt answers `200` with the same body. A submitted attempt ⇒ `422 ATTEMPT_NOT_EDITABLE`; one past its window ⇒ `409 ATTEMPT_EXPIRED`. It claims the row with `status = 'in_progress'`, so an attempt submitted in the meantime is refused rather than relabelled.
 - `review` reads the stored result without re-grading: the `§5.4` payload, `409 INVALID_TRANSITION` until the attempt is submitted. A review request can never rescore an attempt.
+- `list` returns only the caller's attempts, newest first by `startedAt`, in the §10 envelope (`{ data, pagination: { limit, hasMore, nextCursor } }`). Filters are allow-listed (`status`, `subjectId`, `topicId`, and `from`/`to` on `startedAt`); `scorePercent` is a percentage and `null` until graded.
+- `retry` is a create, not a copy: the stored config is rebuilt into the §5.1 request and resolved against today's published content with a fresh seed, so the new attempt never reuses the old snapshot. `201` on success; an attempt still in progress ⇒ `409 INVALID_TRANSITION`; a config that no longer parses ⇒ `422 ATTEMPT_NOT_RETRYABLE`; a scope that is gone ⇒ `404`.
 
 ---
 

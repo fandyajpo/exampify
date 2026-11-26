@@ -77,6 +77,13 @@ export const createAttemptSchema = z.discriminatedUnion("source", [
 
 export const attemptModeSchema = z.enum(["practice", "test", "mock"]);
 export const attemptStatusSchema = z.enum(["in_progress", "submitted", "abandoned", "expired"]);
+export const attemptSourceSchema = z.enum([
+  "topic",
+  "chapter",
+  "subject",
+  "assessment",
+  "resource",
+]);
 
 /** The `§5.1` student question: text, options and points — never the key or the explanation. */
 export const studentQuestionSchema = z.object({
@@ -242,6 +249,63 @@ export const saveAnswersEnvelopeSchema = z.object({
     reveal: revealSchema.optional(),
   }),
 });
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/attempts (§5.5)
+// ---------------------------------------------------------------------------
+
+/** An ISO-8601 date or timestamp; anything `Date.parse` cannot read is a `422`. */
+const timestamp = z
+  .string()
+  .trim()
+  .min(8)
+  .max(40)
+  .refine((value) => !Number.isNaN(Date.parse(value)), "Use an ISO-8601 date or timestamp.");
+
+export const attemptListQuerySchema = z
+  .object({
+    status: attemptStatusSchema.optional(),
+    subjectId: id.optional(),
+    topicId: id.optional(),
+    /** Applied to `startedAt`, so a window means "attempts begun in it". */
+    from: timestamp.optional(),
+    to: timestamp.optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    cursor: z.string().max(512).optional(),
+  })
+  .strict();
+
+/** One row of the history list; `scorePercent` is a percentage and `null` until graded. */
+export const attemptSummarySchema = z.object({
+  id: z.string(),
+  status: attemptStatusSchema,
+  source: attemptSourceSchema,
+  mode: attemptModeSchema,
+  subject: z.object({ id: z.string(), name: z.string() }),
+  topic: z.object({ id: z.string(), title: z.string() }).nullable(),
+  assessment: z.object({ id: z.string(), title: z.string() }).nullable(),
+  questionCount: z.number().int(),
+  answeredCount: z.number().int(),
+  correctCount: z.number().int(),
+  scorePercent: z.number().nullable(),
+  startedAt: z.string(),
+  submittedAt: z.string().nullable(),
+  durationSeconds: z.number().int().nullable(),
+});
+
+/** The §10 collection envelope: one page plus enough to ask for the next. */
+export const attemptListSchema = z.object({
+  data: z.array(attemptSummarySchema),
+  pagination: z.object({
+    limit: z.number().int(),
+    hasMore: z.boolean(),
+    nextCursor: z.string().nullable(),
+  }),
+});
+
+export type AttemptListQuery = z.infer<typeof attemptListQuerySchema>;
+export type AttemptSummary = z.infer<typeof attemptSummarySchema>;
+export type AttemptListPage = z.infer<typeof attemptListSchema>;
 
 export type CreateAttemptInput = z.infer<typeof createAttemptSchema>;
 export type SaveAnswerEntry = z.infer<typeof saveAnswerEntrySchema>;

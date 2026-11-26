@@ -19,6 +19,9 @@ import {
 } from "@/lib/services/attempt-review";
 import type {
   AttemptDto,
+  AttemptListPage,
+  AttemptListQuery,
+  AttemptSummary,
   CreateAttemptInput,
   ResumeAttemptDto,
   RevealDto,
@@ -28,6 +31,8 @@ import type {
   StudentQuestion,
   SubmitAttemptDto,
 } from "@/lib/validation/attempts";
+import { createAttemptSchema } from "@/lib/validation/attempts";
+import { decodeCursor, encodeCursor } from "@/lib/validation/cursor";
 import type { QuestionType } from "@/lib/validation/questions";
 
 /**
@@ -337,13 +342,17 @@ function selectionFilter(
   };
 }
 
+function attemptMode(config: Record<string, unknown>): AttemptDto["mode"] {
+  return config.mode === "test" || config.mode === "mock" ? config.mode : "practice";
+}
+
 function toAttemptDto(row: Database["assessment_attempts"], config: Record<string, unknown>): AttemptDto {
   return {
     id: row.id,
     status: row.status,
     startedAt: ISO(row.started_at),
     expiresAt: ISO(row.expires_at),
-    mode: config.mode === "test" || config.mode === "mock" ? config.mode : "practice",
+    mode: attemptMode(config),
     questionCount: row.question_count,
     requestedCount:
       typeof config.requestedCount === "number" ? config.requestedCount : row.question_count,
@@ -702,7 +711,7 @@ export async function saveAnswers(
   }
 
   const config = parseConfig(attempt.config);
-  const mode = config.mode === "test" || config.mode === "mock" ? config.mode : "practice";
+  const mode = attemptMode(config);
   const questionIds = input.answers.map((entry) => entry.questionId);
 
   const items = await db
@@ -1065,6 +1074,167 @@ export async function reviewAttempt(actor: Actor, attemptId: string): Promise<Su
     attempt: toSubmitDto(attempt, parseConfig(attempt.config)),
     results: await loadAttemptReview(db, attempt.id),
   };
+}
+
+/**
+ * `GET /api/v1/attempts` (`API_CONTRACTS.md` §5.5, §10).
+ *
+ * The caller's own history, newest first, keyed on `(started_at, id)` so a cursor stays
+ * stable while new attempts are created. `config` supplies `mode`; the subject, topic and
+ * assessment names come from joins so the list needs no second request.
+ */
+export async function listAttempts(
+  actor: Actor,
+  query: AttemptListQuery,
+): Promise<AttemptListPage> {
+  const db = await getDb();
+  const limit = query.limit;
+
+  let builder = db
+    .selectFrom("assessment_attempts as a")
+    .innerJoin("subjects as s", "s.id", "a.subject_id")
+    .leftJoin("topics as t", "t.id", "a.topic_id")
+    .leftJoin("assessments as asm", "asm.id", "a.assessment_id")
+    .select([
+      "a.id as id",
+      "a.status as status",
+      "a.source as source",
+      "a.config as config",
+      "a.question_count as questionCount",
+      "a.answered_count as answeredCount",
+      "a.correct_count as correctCount",
+      "a.score_percent_x100 as scorePercentX100",
+      "a.started_at as startedAt",
+      "a.submitted_at as submittedAt",
+      "a.duration_seconds as durationSeconds",
+      "s.id as subjectId",
+      "s.name as subjectName",
+      "t.id as topicId",
+      "t.title as topicTitle",
+      "asm.id as assessmentId",
+      "asm.title as assessmentTitle",
+    ])
+    .where("a.user_id", "=", actor.id);
+
+  if (query.status) builder = builder.where("a.status", "=", query.status);
+  if (query.subjectId) builder = builder.where("a.subject_id", "=", query.subjectId);
+  if (query.topicId) builder = builder.where("a.topic_id", "=", query.topicId);
+  if (query.from) builder = builder.where("a.started_at", ">=", Date.parse(query.from));
+  if (query.to) builder = builder.where("a.started_at", "<=", Date.parse(query.to));
+
+  if (query.cursor) {
+    const cursor = decodeCursor(query.cursor);
+    const startedAt = Number(cursor.k);
+    builder = builder.where((eb) =>
+      eb.or([
+        eb("a.started_at", "<", startedAt),
+        eb.and([eb("a.started_at", "=", startedAt), eb("a.id", "<", cursor.id)]),
+      ]),
+    );
+  }
+
+  const rows = await builder
+    .orderBy("a.started_at", "desc")
+    .orderBy("a.id", "desc")
+    .limit(limit + 1)
+    .execute();
+
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+
+  return {
+    data: page.map(
+      (row): AttemptSummary => ({
+        id: row.id,
+        status: row.status,
+        source: row.source,
+        mode: attemptMode(parseConfig(row.config)),
+        subject: { id: row.subjectId, name: row.subjectName },
+        topic:
+          row.topicId === null || row.topicTitle === null
+            ? null
+            : { id: row.topicId, title: row.topicTitle },
+        assessment:
+          row.assessmentId === null || row.assessmentTitle === null
+            ? null
+            : { id: row.assessmentId, title: row.assessmentTitle },
+        questionCount: row.questionCount,
+        answeredCount: row.answeredCount,
+        correctCount: row.correctCount,
+        scorePercent: row.scorePercentX100 === null ? null : row.scorePercentX100 / 100,
+        startedAt: ISO(row.startedAt),
+        submittedAt: row.submittedAt === null ? null : ISO(row.submittedAt),
+        durationSeconds: row.durationSeconds,
+      }),
+    ),
+    pagination: {
+      limit,
+      hasMore: rows.length > limit,
+      nextCursor:
+        rows.length > limit && last ? encodeCursor({ k: last.startedAt, id: last.id }) : null,
+    },
+  };
+}
+
+/**
+ * `POST /api/v1/attempts/{id}/retry` (`API_CONTRACTS.md` §5.5).
+ *
+ * A retry is a create, not a copy: the stored config is rebuilt into the §5.1 request and
+ * `createAttempt` resolves today's published content with a fresh seed, so the new attempt
+ * never reuses the old snapshot. An attempt still in progress has to be finished or
+ * abandoned first, or two live attempts would compete for the same runner.
+ */
+export async function retryAttempt(actor: Actor, attemptId: string): Promise<CreateAttemptResult> {
+  const db = await getDb();
+  const attempt = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  if (!attempt) throw notFound("attempt");
+  if (attempt.status === "in_progress") {
+    throw new HttpError(
+      409,
+      "INVALID_TRANSITION",
+      "Finish or abandon this attempt before retrying it.",
+    );
+  }
+
+  const config = parseConfig(attempt.config);
+  const practice = {
+    questionCount: config.requestedCount,
+    difficulty: config.difficulty ?? "any",
+    questionTypes: config.questionTypes ?? [],
+    order: config.order === "fixed" ? ("fixed" as const) : ("random" as const),
+  };
+
+  const candidate: unknown =
+    attempt.source === "assessment"
+      ? { source: "assessment", assessmentId: attempt.assessment_id }
+      : attempt.source === "resource"
+        ? {
+            source: "resource",
+            resourceId: attempt.resource_id,
+            assessmentId: attempt.assessment_id,
+          }
+        : attempt.source === "topic"
+          ? { source: "topic", topicId: attempt.topic_id, ...practice }
+          : attempt.source === "chapter"
+            ? { source: "chapter", chapterId: attempt.chapter_id, ...practice }
+            : { source: "subject", subjectId: attempt.subject_id, ...practice };
+
+  const input = createAttemptSchema.safeParse(candidate);
+  if (!input.success) {
+    throw new HttpError(
+      422,
+      "ATTEMPT_NOT_RETRYABLE",
+      "This attempt's stored configuration can no longer be retried.",
+    );
+  }
+
+  return createAttempt(actor, input.data, null);
 }
 
 /** The topic ids a generated practice set draws from, resolved from the requested scope. */
