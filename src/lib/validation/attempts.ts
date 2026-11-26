@@ -193,7 +193,60 @@ export const submitEnvelopeSchema = z.object({
   data: z.object({ attempt: submitAttemptSchema, results: z.array(reviewItemSchema) }),
 });
 
+// ---------------------------------------------------------------------------
+// PATCH /api/v1/attempts/{attemptId}/answers (§5.3)
+// ---------------------------------------------------------------------------
+
+/** §5.3 caps a batch at four: the runner saves as it goes, not once at the end. */
+export const SAVE_ANSWERS_MAX_BATCH = 4;
+
+export const saveAnswerEntrySchema = z
+  .object({
+    questionId: z.string().trim().min(1).max(128),
+    /** `null` clears the item. */
+    answer: studentAnswerSchema.nullable(),
+    /** Time spent on the item, in milliseconds; cleared along with the answer. */
+    responseMs: z.number().int().min(0).max(86_400_000).optional(),
+  })
+  .strict();
+
+export const saveAnswersSchema = z
+  .object({
+    answers: z
+      .array(saveAnswerEntrySchema)
+      .min(1)
+      .max(SAVE_ANSWERS_MAX_BATCH)
+      // A question twice in one batch has no single meaning for `reveal` or `answeredCount`.
+      .refine((entries) => new Set(entries.map((entry) => entry.questionId)).size === entries.length, {
+        message: "Each question may appear once per save.",
+      }),
+  })
+  .strict();
+
+/**
+ * Immediate feedback for one just-answered item (§5.3, `FR-PRAC-12`). It is the review
+ * item's key-bearing part only, so a save can never return a whole review row.
+ */
+export const revealSchema = z.object({
+  questionId: z.string(),
+  isCorrect: z.boolean().nullable(),
+  correctAnswer: correctAnswerViewSchema.nullable(),
+  explanationHtml: z.string(),
+});
+
+export const saveAnswersEnvelopeSchema = z.object({
+  data: z.object({
+    saved: z.number().int(),
+    answeredCount: z.number().int(),
+    expiresAt: z.string(),
+    reveal: revealSchema.optional(),
+  }),
+});
+
 export type CreateAttemptInput = z.infer<typeof createAttemptSchema>;
+export type SaveAnswerEntry = z.infer<typeof saveAnswerEntrySchema>;
+export type SaveAnswersInput = z.infer<typeof saveAnswersSchema>;
+export type RevealDto = z.infer<typeof revealSchema>;
 export type SavedAnswer = z.infer<typeof savedAnswerSchema>;
 export type ResumeAttemptDto = z.infer<typeof resumeAttemptSchema>;
 export type ResumeEnvelope = z.infer<typeof resumeEnvelopeSchema>;

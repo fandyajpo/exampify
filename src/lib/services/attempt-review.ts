@@ -80,7 +80,7 @@ export async function loadMediaMap(
 }
 
 /** The key as the review shows it: no scoring rule, and `null` when it no longer parses. */
-function toCorrectAnswerView(key: AnswerKey | null): CorrectAnswerView | null {
+export function toCorrectAnswerView(key: AnswerKey | null): CorrectAnswerView | null {
   if (key === null) return null;
   switch (key.type) {
     case "multiple_choice":

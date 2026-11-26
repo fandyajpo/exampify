@@ -291,18 +291,28 @@ type ResumeResponse = {
 
 ```ts
 type SaveAnswersRequest = {
-  answers: { questionId: string; answer: StudentAnswer | null; responseMs?: number }[];
+  answers: { questionId: string; answer: StudentAnswer | null; responseMs?: number }[];  // 1–4
+};
+
+type SaveAnswersResponse = {
+  saved: number;            // items written, i.e. the batch size
+  answeredCount: number;
+  expiresAt: string;
+  reveal?: {
+    questionId: string; isCorrect: boolean | null;
+    correctAnswer: CorrectAnswerView | null; explanationHtml: string;
+  };
 };
 ```
 
-`200 { data: { saved, answeredCount, expiresAt, reveal?: { questionId, isCorrect, correctAnswer, explanationHtml } } }`
-
-- Batch up to 4 answers.
-- `answer: null` clears.
-- **`reveal` is present only when `mode = 'practice'`** and the question was just answered; it is the immediate-feedback path (`FR-PRAC-12`). It is absent for `test`/`mock` and absent on re-save of the same answer.
+- Batch 1–4 answers; a question may appear once per request (a repeat ⇒ `422 VALIDATION_ERROR`).
+- `answer: null` clears the item; `responseMs` is 0–86 400 000 ms and is cleared with the answer.
+- **`reveal` is present only when `mode = 'practice'`** and the save newly answers **exactly one** item; it is the immediate-feedback path (`FR-PRAC-12`). It is absent for `test`/`mock`, absent on re-save of the same answer, and absent when a batch answers several — the runner that wants feedback sends one answer per save.
+- `reveal.correctAnswer` is `null` when the stored key no longer parses, and `isCorrect` is `null` with it — never a guessed wrong.
+- An answer whose `type` does not match its question ⇒ `422 VALIDATION_ERROR` (`ANSWER_TYPE_MISMATCH`).
 - Rejected if `status !== 'in_progress'` ⇒ `409 ATTEMPT_EXPIRED` or `422 ATTEMPT_NOT_EDITABLE`.
 - Items not in the attempt ⇒ `422 QUESTION_NOT_IN_ATTEMPT`.
-- Refreshes `last_activity_at`/`expires_at`.
+- Refreshes `last_activity_at`; `expiresAt` is 24 h from now, or the timed attempt's fixed deadline when that is sooner. The save is one transaction, and it claims the row with `status = 'in_progress'`, so a save that raced a submit is refused rather than editing a graded attempt.
 
 ### 5.4 Submit
 
@@ -351,6 +361,9 @@ type ReviewItem = {
 | `POST` | `/api/v1/attempts/{id}/retry` | — | `201` new attempt with the same config, fresh selection |
 
 `AttemptSummary = { id, status, source, mode, subject: {id,name}, topic: {id,title}|null, assessment: {id,title}|null, questionCount, answeredCount, correctCount, scorePercent, startedAt, submittedAt, durationSeconds }`
+
+- `abandon` is idempotent: an already abandoned attempt answers `200` with the same body. A submitted attempt ⇒ `422 ATTEMPT_NOT_EDITABLE`; one past its window ⇒ `409 ATTEMPT_EXPIRED`. It claims the row with `status = 'in_progress'`, so an attempt submitted in the meantime is refused rather than relabelled.
+- `review` reads the stored result without re-grading: the `§5.4` payload, `409 INVALID_TRANSITION` until the attempt is submitted. A review request can never rescore an attempt.
 
 ---
 

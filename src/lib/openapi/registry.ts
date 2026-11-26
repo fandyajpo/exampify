@@ -73,6 +73,8 @@ import {
   attemptEnvelopeSchema,
   createAttemptSchema,
   resumeEnvelopeSchema,
+  saveAnswersEnvelopeSchema,
+  saveAnswersSchema,
   submitEnvelopeSchema,
 } from "@/lib/validation/attempts";
 
@@ -393,6 +395,62 @@ const ATTEMPT_ROUTES: Operation[] = [
       },
       { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
       { status: 404, description: "The attempt does not exist, or belongs to another student." },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/attempts/{attemptId}/answers",
+    operationId: "save-attempt-answers",
+    summary: "Save answers for an attempt",
+    description:
+      "Any signed-in, email-verified student, on their own in-progress attempt. One to four answers per batch; `answer: null` clears an item and `responseMs` records time on it. " +
+      "The save is one transaction and refreshes the attempt's activity window (24 h, or the timed attempt's fixed deadline when sooner). " +
+      "`reveal` appears only when a practice save newly answers exactly one item — never for `test`/`mock`, never on a re-save of the same answer, and never when a batch answers several. A key that no longer parses yields `isCorrect: null` and `correctAnswer: null`.",
+    tag: "practice",
+    request: saveAnswersSchema,
+    responses: [
+      { status: 200, description: "The saved count, answered count, expiry and optional reveal.", schema: saveAnswersEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+      { status: 404, description: "The attempt does not exist, or belongs to another student." },
+      { status: 409, description: "`ATTEMPT_EXPIRED`." },
+      {
+        status: 422,
+        description:
+          "`VALIDATION_ERROR`, `QUESTION_NOT_IN_ATTEMPT`, or `ATTEMPT_NOT_EDITABLE` for a submitted or abandoned attempt.",
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/attempts/{attemptId}/abandon",
+    operationId: "abandon-attempt",
+    summary: "Abandon an attempt",
+    description:
+      "Any signed-in, email-verified student, on their own attempt. No body. Idempotent: an already abandoned attempt answers the same body. A submitted attempt is `422 ATTEMPT_NOT_EDITABLE`; one past its window is `409 ATTEMPT_EXPIRED`.",
+    tag: "practice",
+    responses: [
+      { status: 200, description: "The attempt is abandoned." },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+      { status: 404, description: "The attempt does not exist, or belongs to another student." },
+      { status: 409, description: "`ATTEMPT_EXPIRED`." },
+      { status: 422, description: "`ATTEMPT_NOT_EDITABLE` for a submitted attempt." },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/attempts/{attemptId}/review",
+    operationId: "review-attempt",
+    summary: "Read a submitted attempt's review",
+    description:
+      "Any signed-in, email-verified student, on their own submitted attempt. The same payload `submit` returns, read from the stored totals without grading again, so a review request cannot rescore an attempt. Anything not submitted is `409 INVALID_TRANSITION`; another student's id is a `404`.",
+    tag: "practice",
+    responses: [
+      { status: 200, description: "The graded attempt and one review item per question.", schema: submitEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 404, description: "The attempt does not exist, or belongs to another student." },
+      { status: 409, description: "`INVALID_TRANSITION` until the attempt is submitted." },
     ],
   },
   {

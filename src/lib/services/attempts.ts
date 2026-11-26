@@ -10,13 +10,21 @@ import { markdownTextToHtml } from "@/lib/markdown";
 import { gradeAttempt } from "@/lib/practice/grading";
 import { selectQuestions, type SelectionFilter, type SelectedQuestion } from "@/lib/practice/selection";
 import type { Actor } from "@/lib/rbac";
-import { loadAttemptReview, loadMediaMap, parseAnswerKey, parseStudentAnswer } from "@/lib/services/attempt-review";
+import {
+  loadAttemptReview,
+  loadMediaMap,
+  parseAnswerKey,
+  parseStudentAnswer,
+  toCorrectAnswerView,
+} from "@/lib/services/attempt-review";
 import type {
   AttemptDto,
   CreateAttemptInput,
   ResumeAttemptDto,
+  RevealDto,
   ReviewItem,
   SavedAnswer,
+  SaveAnswersInput,
   StudentQuestion,
   SubmitAttemptDto,
 } from "@/lib/validation/attempts";
@@ -638,6 +646,189 @@ export async function resumeAttempt(actor: Actor, attemptId: string): Promise<Re
   };
 }
 
+export type SaveAnswersResult = {
+  saved: number;
+  answeredCount: number;
+  expiresAt: string;
+  reveal?: RevealDto;
+};
+
+/**
+ * `PATCH /api/v1/attempts/{id}/answers` (`API_CONTRACTS.md` §5.3).
+ *
+ * A save is one transaction: the activity timestamp and every item are written together, so
+ * a partial batch cannot leave `answeredCount` disagreeing with the stored selections. The
+ * activity update claims the row with `status = 'in_progress'`, which is also how a save
+ * that raced a submit learns it lost instead of editing a graded attempt.
+ *
+ * Grading does not happen here. Only the practice reveal needs a verdict, so it is computed
+ * for the single newly-answered item and never written: `submitAttempt` remains the one
+ * place a score is stored.
+ */
+export async function saveAnswers(
+  actor: Actor,
+  attemptId: string,
+  input: SaveAnswersInput,
+): Promise<SaveAnswersResult> {
+  const db = await getDb();
+  const attempt = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  if (!attempt) throw notFound("attempt");
+
+  const now = Date.now();
+  if (attempt.status === "in_progress" && now > attempt.expires_at) {
+    await db
+      .updateTable("assessment_attempts")
+      .set({ status: "expired", updated_at: now })
+      .where("id", "=", attempt.id)
+      .where("status", "=", "in_progress")
+      .execute();
+    throw new HttpError(409, "ATTEMPT_EXPIRED", "This attempt expired before those answers were saved.");
+  }
+  if (attempt.status === "expired") {
+    throw new HttpError(409, "ATTEMPT_EXPIRED", "This attempt expired before those answers were saved.");
+  }
+  if (attempt.status !== "in_progress") {
+    throw new HttpError(
+      422,
+      "ATTEMPT_NOT_EDITABLE",
+      "A submitted or abandoned attempt cannot be edited.",
+    );
+  }
+
+  const config = parseConfig(attempt.config);
+  const mode = config.mode === "test" || config.mode === "mock" ? config.mode : "practice";
+  const questionIds = input.answers.map((entry) => entry.questionId);
+
+  const items = await db
+    .selectFrom("attempt_items as ai")
+    .innerJoin("questions as q", "q.id", "ai.question_id")
+    .select([
+      "ai.id as id",
+      "ai.question_id as questionId",
+      "ai.selected_answer as selectedAnswer",
+      "ai.points_x100_max as pointsX100Max",
+      "q.question_type as questionType",
+      "q.answer_key as answerKey",
+      "q.explanation_md as explanationMd",
+    ])
+    .where("ai.attempt_id", "=", attempt.id)
+    .where("ai.question_id", "in", questionIds)
+    .execute();
+
+  const byQuestion = new Map(items.map((item) => [item.questionId, item]));
+  const missing = questionIds.filter((questionId) => !byQuestion.has(questionId));
+  if (missing.length > 0) {
+    throw new HttpError(
+      422,
+      "QUESTION_NOT_IN_ATTEMPT",
+      "Those questions are not part of this attempt.",
+      missing.map((questionId) => ({
+        path: `answers.${questionIds.indexOf(questionId)}.questionId`,
+        code: "QUESTION_NOT_IN_ATTEMPT",
+        message: `${questionId} is not part of this attempt.`,
+      })),
+    );
+  }
+
+  const changes = input.answers.map((entry) => {
+    const item = byQuestion.get(entry.questionId)!;
+    if (entry.answer !== null && entry.answer.type !== item.questionType) {
+      throw new HttpError(422, "VALIDATION_ERROR", "An answer does not match its question type.", [
+        {
+          path: `answers.${questionIds.indexOf(entry.questionId)}.answer`,
+          code: "ANSWER_TYPE_MISMATCH",
+          message: `Expected a ${item.questionType} answer for ${entry.questionId}.`,
+        },
+      ]);
+    }
+
+    return {
+      entry,
+      item,
+      // A re-save of the same selection is not "just answered": §5.3 withholds the reveal.
+      changed:
+        JSON.stringify(parseStudentAnswer(item.selectedAnswer)) !== JSON.stringify(entry.answer),
+    };
+  });
+
+  const limit = typeof config.durationSeconds === "number" ? config.durationSeconds : null;
+  // 24 h of inactivity, tightened to a timed attempt's fixed deadline.
+  const expiresAt =
+    limit === null ? now + DAY_MS : Math.min(attempt.started_at + limit * 1_000, now + DAY_MS);
+
+  await db.transaction().execute(async (trx) => {
+    const claim = await trx
+      .updateTable("assessment_attempts")
+      .set({ last_activity_at: now, expires_at: expiresAt, updated_at: now })
+      .where("id", "=", attempt.id)
+      .where("user_id", "=", actor.id)
+      .where("status", "=", "in_progress")
+      .executeTakeFirst();
+
+    if (Number(claim.numUpdatedRows) === 0) {
+      throw new HttpError(422, "ATTEMPT_NOT_EDITABLE", "This attempt is no longer editable.");
+    }
+
+    for (const change of changes) {
+      await trx
+        .updateTable("attempt_items")
+        .set({
+          selected_answer:
+            change.entry.answer === null ? null : JSON.stringify(change.entry.answer),
+          response_ms: change.entry.answer === null ? null : (change.entry.responseMs ?? null),
+          answered_at: change.entry.answer === null ? null : now,
+        })
+        .where("id", "=", change.item.id)
+        .execute();
+    }
+  });
+
+  const answered = await db
+    .selectFrom("attempt_items")
+    .select("id")
+    .where("attempt_id", "=", attempt.id)
+    .where("selected_answer", "is not", null)
+    .execute();
+
+  // §5.3: a practice save that newly answers exactly one item is the immediate-feedback path.
+  const answeredChanges = changes.filter(
+    (change) => change.changed && change.entry.answer !== null,
+  );
+  let reveal: RevealDto | undefined;
+  if (mode === "practice" && answeredChanges.length === 1) {
+    const { entry, item } = answeredChanges[0]!;
+    const key = parseAnswerKey(item.answerKey);
+    const graded = gradeAttempt([
+      {
+        questionId: item.questionId,
+        pointsMax: item.pointsX100Max,
+        answer: entry.answer,
+        question: key === null ? null : { id: item.questionId, answerKey: key },
+      },
+    ]);
+
+    reveal = {
+      questionId: item.questionId,
+      isCorrect: graded.items[0]!.isCorrect,
+      correctAnswer: key === null ? null : toCorrectAnswerView(key),
+      explanationHtml: markdownTextToHtml(item.explanationMd),
+    };
+  }
+
+  return {
+    saved: input.answers.length,
+    answeredCount: answered.length,
+    expiresAt: ISO(expiresAt),
+    ...(reveal === undefined ? {} : { reveal }),
+  };
+}
+
 /**
  * `POST /api/v1/attempts/{id}/submit` (`API_CONTRACTS.md` §5.4).
  *
@@ -798,6 +989,80 @@ export async function submitAttempt(actor: Actor, attemptId: string): Promise<Su
 
   return {
     attempt: toSubmitDto(row, parseConfig(row.config)),
+    results: await loadAttemptReview(db, attempt.id),
+  };
+}
+
+/**
+ * `POST /api/v1/attempts/{id}/abandon` (`API_CONTRACTS.md` §5.5).
+ *
+ * Idempotent by design: abandoning an abandoned attempt answers the same body, so a retried
+ * request is not an error. The update claims the row with `status = 'in_progress'`, so an
+ * attempt submitted in the meantime is refused instead of being relabelled.
+ */
+export async function abandonAttempt(actor: Actor, attemptId: string): Promise<{ status: "abandoned" }> {
+  const db = await getDb();
+  const attempt = await db
+    .selectFrom("assessment_attempts")
+    .select(["id", "status", "expires_at"])
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  if (!attempt) throw notFound("attempt");
+  if (attempt.status === "abandoned") return { status: "abandoned" };
+
+  const now = Date.now();
+  // A submitted attempt is not editable whatever its old window says, so it is checked first.
+  if (attempt.status === "submitted") {
+    throw new HttpError(422, "ATTEMPT_NOT_EDITABLE", "A submitted attempt cannot be abandoned.");
+  }
+  if (attempt.status === "expired" || now > attempt.expires_at) {
+    throw new HttpError(409, "ATTEMPT_EXPIRED", "This attempt has already expired.");
+  }
+
+  const claimed = await db
+    .updateTable("assessment_attempts")
+    .set({ status: "abandoned", updated_at: now })
+    .where("id", "=", attempt.id)
+    .where("user_id", "=", actor.id)
+    .where("status", "=", "in_progress")
+    .executeTakeFirst();
+
+  if (Number(claimed.numUpdatedRows) === 0) {
+    throw new HttpError(422, "ATTEMPT_NOT_EDITABLE", "This attempt is no longer editable.");
+  }
+
+  return { status: "abandoned" };
+}
+
+/**
+ * `GET /api/v1/attempts/{id}/review` (`API_CONTRACTS.md` §5.5).
+ *
+ * The same payload `submit` returns, read without grading again: the stored totals and the
+ * review projection are already the graded answer, so a review request cannot rescore an
+ * attempt. Only a submitted attempt has one.
+ */
+export async function reviewAttempt(actor: Actor, attemptId: string): Promise<SubmitAttemptResult> {
+  const db = await getDb();
+  const attempt = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  if (!attempt) throw notFound("attempt");
+  if (attempt.status !== "submitted") {
+    throw new HttpError(
+      409,
+      "INVALID_TRANSITION",
+      "Only a submitted attempt has a review.",
+    );
+  }
+
+  return {
+    attempt: toSubmitDto(attempt, parseConfig(attempt.config)),
     results: await loadAttemptReview(db, attempt.id),
   };
 }
