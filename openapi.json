@@ -1049,6 +1049,533 @@
         }
       }
     },
+    "/api/v1/attempts/{attemptId}": {
+      "get": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Resume an attempt",
+        "operationId": "resume-attempt",
+        "responses": {
+          "200": {
+            "description": "The attempt, its questions and the answers saved so far.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "attempt": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "in_progress",
+                                "submitted",
+                                "abandoned",
+                                "expired"
+                              ]
+                            },
+                            "startedAt": {
+                              "type": "string"
+                            },
+                            "expiresAt": {
+                              "type": "string"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "practice",
+                                "test",
+                                "mock"
+                              ]
+                            },
+                            "questionCount": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "requestedCount": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "durationSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "config": {
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "additionalProperties": {}
+                            },
+                            "canResume": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "status",
+                            "startedAt",
+                            "expiresAt",
+                            "mode",
+                            "questionCount",
+                            "requestedCount",
+                            "durationSeconds",
+                            "config",
+                            "canResume"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "questions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "multiple_choice",
+                                  "multiple_select",
+                                  "true_false",
+                                  "short_answer"
+                                ]
+                              },
+                              "difficulty": {
+                                "type": "string",
+                                "enum": [
+                                  "easy",
+                                  "medium",
+                                  "hard",
+                                  "very_hard"
+                                ]
+                              },
+                              "stemHtml": {
+                                "type": "string"
+                              },
+                              "media": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "url": {
+                                        "type": "string"
+                                      },
+                                      "alt": {
+                                        "type": "string"
+                                      },
+                                      "width": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "height": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "url",
+                                      "alt",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "options": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "label": {
+                                      "type": "string",
+                                      "enum": [
+                                        "A",
+                                        "B",
+                                        "C",
+                                        "D",
+                                        "E",
+                                        "F",
+                                        "G",
+                                        "H"
+                                      ]
+                                    },
+                                    "html": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "html"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "pointsMax": {
+                                "type": "number"
+                              },
+                              "answer": {
+                                "anyOf": [
+                                  {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_choice"
+                                          },
+                                          "option": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  "A",
+                                                  "B",
+                                                  "C",
+                                                  "D",
+                                                  "E",
+                                                  "F",
+                                                  "G",
+                                                  "H"
+                                                ]
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "option"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_select"
+                                          },
+                                          "options": {
+                                            "maxItems": 8,
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string",
+                                              "enum": [
+                                                "A",
+                                                "B",
+                                                "C",
+                                                "D",
+                                                "E",
+                                                "F",
+                                                "G",
+                                                "H"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "options"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "true_false"
+                                          },
+                                          "value": {
+                                            "type": [
+                                              "boolean",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "short_answer"
+                                          },
+                                          "text": {
+                                            "type": "string",
+                                            "maxLength": 500
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "text"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "position",
+                              "type",
+                              "difficulty",
+                              "stemHtml",
+                              "media",
+                              "options",
+                              "pointsMax",
+                              "answer"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "savedAnswers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "questionId": {
+                                "type": "string"
+                              },
+                              "answer": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "v": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "const": "multiple_choice"
+                                      },
+                                      "option": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "A",
+                                              "B",
+                                              "C",
+                                              "D",
+                                              "E",
+                                              "F",
+                                              "G",
+                                              "H"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "v",
+                                      "type",
+                                      "option"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "v": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "const": "multiple_select"
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "enum": [
+                                            "A",
+                                            "B",
+                                            "C",
+                                            "D",
+                                            "E",
+                                            "F",
+                                            "G",
+                                            "H"
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "v",
+                                      "type",
+                                      "options"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "v": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "const": "true_false"
+                                      },
+                                      "value": {
+                                        "type": [
+                                          "boolean",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "v",
+                                      "type",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "v": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "const": "short_answer"
+                                      },
+                                      "text": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                      }
+                                    },
+                                    "required": [
+                                      "v",
+                                      "type",
+                                      "text"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              "responseMs": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "questionId",
+                              "answer",
+                              "responseMs"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "attempt",
+                        "questions",
+                        "savedAnswers"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          }
+        },
+        "description": "Any signed-in, email-verified student, on their own attempt. Restores the runner: the snapshotted questions with the answers already saved, a `savedAnswers` list carrying response times, and `attempt.canResume`. An attempt read after its window is marked `expired` first, so the reply is a `200` with `canResume: false` and still no keys. Another student's id is a `404`, not a `403`, so the endpoint never confirms existence."
+      }
+    },
     "/api/v1/attempts/{attemptId}/submit": {
       "post": {
         "tags": [

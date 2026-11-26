@@ -14,7 +14,9 @@ import { loadAttemptReview, loadMediaMap, parseAnswerKey, parseStudentAnswer } f
 import type {
   AttemptDto,
   CreateAttemptInput,
+  ResumeAttemptDto,
   ReviewItem,
+  SavedAnswer,
   StudentQuestion,
   SubmitAttemptDto,
 } from "@/lib/validation/attempts";
@@ -355,8 +357,17 @@ function parseConfig(raw: string): Record<string, unknown> {
   }
 }
 
-/** The student view of an attempt's items: text and options, never the key (SEC §5). */
-async function loadStudentQuestions(db: Executor, attemptId: string): Promise<StudentQuestion[]> {
+/**
+ * The student view of an attempt's items: text and options, never the key (SEC §5).
+ *
+ * `savedAnswers` is empty for a fresh create and filled for a resume, so the runner restores
+ * a selection without a second request; the key is still never selected here.
+ */
+async function loadStudentQuestions(
+  db: Executor,
+  attemptId: string,
+  savedAnswers: SavedAnswer[] = [],
+): Promise<StudentQuestion[]> {
   const items = await db
     .selectFrom("attempt_items as ai")
     .innerJoin("questions as q", "q.id", "ai.question_id")
@@ -395,6 +406,8 @@ async function loadStudentQuestions(db: Executor, attemptId: string): Promise<St
     items.flatMap((item) => (item.mediaId === null ? [] : [item.mediaId])),
   );
 
+  const answers = new Map(savedAnswers.map((saved) => [saved.questionId, saved.answer]));
+
   return items.map((item) => ({
     id: item.questionId,
     position: item.position,
@@ -404,8 +417,30 @@ async function loadStudentQuestions(db: Executor, attemptId: string): Promise<St
     media: item.mediaId === null ? null : (media.get(item.mediaId) ?? null),
     options: optionsByQuestion.get(item.questionId) ?? [],
     pointsMax: POINTS(item.pointsX100Max),
-    answer: null,
+    answer: answers.get(item.questionId) ?? null,
   }));
+}
+
+/** The saved selections of an attempt, in item order. A cleared answer has no row. */
+async function loadSavedAnswers(db: Executor, attemptId: string): Promise<SavedAnswer[]> {
+  const rows = await db
+    .selectFrom("attempt_items")
+    .select([
+      "question_id as questionId",
+      "selected_answer as selectedAnswer",
+      "response_ms as responseMs",
+    ])
+    .where("attempt_id", "=", attemptId)
+    .where("selected_answer", "is not", null)
+    .orderBy("position")
+    .execute();
+
+  return rows.flatMap((row) => {
+    const answer = parseStudentAnswer(row.selectedAnswer);
+    return answer === null
+      ? []
+      : [{ questionId: row.questionId, answer, responseMs: row.responseMs }];
+  });
 }
 
 export type CreateAttemptResult = {
@@ -549,6 +584,57 @@ export async function createAttempt(
     attempt: toAttemptDto(row, config),
     questions: await loadStudentQuestions(db, attemptId),
     replayed: false,
+  };
+}
+
+export type ResumeAttemptResult = {
+  attempt: ResumeAttemptDto;
+  questions: StudentQuestion[];
+  savedAnswers: SavedAnswer[];
+};
+
+/**
+ * `GET /api/v1/attempts/{id}` (`API_CONTRACTS.md` §5.2).
+ *
+ * The runner's restore path: the snapshotted questions, the answers already saved and a
+ * server-decided `canResume`. Reading an attempt past its window performs the same lazy
+ * expiry as `submitAttempt`, so the status a client reads is the status its next write would
+ * meet. Nothing here selects `answer_key`, an explanation or per-option feedback.
+ *
+ * Ownership is part of the query, so another student's id is indistinguishable from a
+ * missing one (`404`, never `403`).
+ */
+export async function resumeAttempt(actor: Actor, attemptId: string): Promise<ResumeAttemptResult> {
+  const db = await getDb();
+  let attempt = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  if (!attempt) throw notFound("attempt");
+
+  if (attempt.status === "in_progress" && Date.now() > attempt.expires_at) {
+    const now = Date.now();
+    await db
+      .updateTable("assessment_attempts")
+      .set({ status: "expired", updated_at: now })
+      .where("id", "=", attempt.id)
+      .where("status", "=", "in_progress")
+      .execute();
+    attempt = { ...attempt, status: "expired" };
+  }
+
+  const savedAnswers = await loadSavedAnswers(db, attempt.id);
+
+  return {
+    attempt: {
+      ...toAttemptDto(attempt, parseConfig(attempt.config)),
+      canResume: attempt.status === "in_progress",
+    },
+    questions: await loadStudentQuestions(db, attempt.id, savedAnswers),
+    savedAnswers,
   };
 }
 

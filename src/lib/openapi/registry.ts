@@ -69,7 +69,12 @@ import {
 } from "@/lib/validation/assessments";
 import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
-import { attemptEnvelopeSchema, createAttemptSchema, submitEnvelopeSchema } from "@/lib/validation/attempts";
+import {
+  attemptEnvelopeSchema,
+  createAttemptSchema,
+  resumeEnvelopeSchema,
+  submitEnvelopeSchema,
+} from "@/lib/validation/attempts";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
 
@@ -369,6 +374,25 @@ const ATTEMPT_ROUTES: Operation[] = [
         status: 422,
         description: "`VALIDATION_ERROR`, `UNKNOWN_FIELD`, or `NO_QUESTIONS_MATCH` with `appliedFilters`.",
       },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/attempts/{attemptId}",
+    operationId: "resume-attempt",
+    summary: "Resume an attempt",
+    description:
+      "Any signed-in, email-verified student, on their own attempt. Restores the runner: the snapshotted questions with the answers already saved, a `savedAnswers` list carrying response times, and `attempt.canResume`. " +
+      "An attempt read after its window is marked `expired` first, so the reply is a `200` with `canResume: false` and still no keys. Another student's id is a `404`, not a `403`, so the endpoint never confirms existence.",
+    tag: "practice",
+    responses: [
+      {
+        status: 200,
+        description: "The attempt, its questions and the answers saved so far.",
+        schema: resumeEnvelopeSchema,
+      },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 404, description: "The attempt does not exist, or belongs to another student." },
     ],
   },
   {

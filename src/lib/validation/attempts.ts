@@ -112,6 +112,31 @@ export const attemptEnvelopeSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// GET /api/v1/attempts/{attemptId} (§5.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * An answer the runner restores, with the time the student took on it. A cleared answer is
+ * absent rather than present with a `null` answer: `savedAnswers` lists what is saved.
+ */
+export const savedAnswerSchema = z.object({
+  questionId: z.string(),
+  answer: studentAnswerSchema,
+  responseMs: z.number().int().nullable(),
+});
+
+/** `canResume` is the server's answer to "may the runner keep going?", not a client guess. */
+export const resumeAttemptSchema = attemptDtoSchema.extend({ canResume: z.boolean() });
+
+export const resumeEnvelopeSchema = z.object({
+  data: z.object({
+    attempt: resumeAttemptSchema,
+    questions: z.array(studentQuestionSchema),
+    savedAnswers: z.array(savedAnswerSchema),
+  }),
+});
+
+// ---------------------------------------------------------------------------
 // POST /api/v1/attempts/{attemptId}/submit (§5.4)
 // ---------------------------------------------------------------------------
 
@@ -169,6 +194,9 @@ export const submitEnvelopeSchema = z.object({
 });
 
 export type CreateAttemptInput = z.infer<typeof createAttemptSchema>;
+export type SavedAnswer = z.infer<typeof savedAnswerSchema>;
+export type ResumeAttemptDto = z.infer<typeof resumeAttemptSchema>;
+export type ResumeEnvelope = z.infer<typeof resumeEnvelopeSchema>;
 export type CorrectAnswerView = z.infer<typeof correctAnswerViewSchema>;
 export type ReviewItem = z.infer<typeof reviewItemSchema>;
 export type SubmitAttemptDto = z.infer<typeof submitAttemptSchema>;

@@ -269,9 +269,21 @@ type StudentQuestion = {
 
 ### 5.2 Read (resume)
 
-`GET /api/v1/attempts/{attemptId}` → `CreateAttemptResponse` plus `savedAnswers` and `status`. Owner only; another user's id ⇒ `404` (not `403`, to avoid existence leaks).
+`GET /api/v1/attempts/{attemptId}` → `200`:
 
-Expired ⇒ `200` with `status: 'expired'`, `canResume: false`, and no answer keys.
+```ts
+type ResumeResponse = {
+  attempt: CreateAttemptResponse['attempt'] & { canResume: boolean };
+  questions: StudentQuestion[];   // `answer` filled from the saved selection
+  savedAnswers: { questionId: string; answer: StudentAnswer; responseMs: number | null }[];
+};
+```
+
+- Owner only; another user's id ⇒ `404` (not `403`, to avoid existence leaks).
+- `savedAnswers` lists answered items in position order; a cleared answer is absent, and its `questions[].answer` is `null`.
+- `canResume` is `true` only while `status: 'in_progress'` and the window is open — the server decides it, the client never infers it.
+- Expired ⇒ `200` with `status: 'expired'`, `canResume: false`, and no answer keys; the row is marked expired first, exactly as a submit would.
+- Submitted or abandoned ⇒ `200` with `canResume: false`; the graded view is `§5.5`'s review endpoint.
 
 ### 5.3 Save answers
 
