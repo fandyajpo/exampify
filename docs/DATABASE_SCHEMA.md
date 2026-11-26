@@ -577,6 +577,20 @@ Subscription and entitlement *metadata*, so the later paywall has a home. No cod
 
 `idx_entitlements_user (user_id, status, ends_at)`. Documented as inert so nobody mistakes it for a working paywall.
 
+### 9.5 `resource_reads` (study progress, Phase 5)
+
+| Column | Type | Constraints |
+|---|---|---|
+| `user_id` | TEXT | NOT NULL, FK → `user(id)` ON DELETE CASCADE |
+| `resource_id` | TEXT | NOT NULL, FK → `learning_resources(id)` ON DELETE CASCADE |
+| `first_read_at` | INTEGER | NOT NULL |
+| `last_read_at` | INTEGER | NOT NULL |
+| `read_count` | INTEGER | NOT NULL DEFAULT 1, `CHECK (read_count >= 1)` |
+
+`PRIMARY KEY (user_id, resource_id)`, `idx_resource_reads_user_time (user_id, last_read_at DESC)`.
+
+One row per student per resource opened, written by `POST /api/v1/resources/{id}/view` ([API_CONTRACTS.md](./API_CONTRACTS.md) §4.4). The primary key makes a repeat visit an update, so "resources read" is a row count and never a `DISTINCT` over a log. This is product data, not analytics: it is **not** subject to `usage_events`' 90-day retention, and it is deleted with the student. `GET /api/v1/progress/study` is its only reader.
+
 ---
 
 ## 10. Search, jobs and operations
@@ -733,6 +747,7 @@ Because permissions only *grant*, `app_rw` is expressed as per-table grants rath
 | Table | Student | Author | Reviewer | Admin |
 |---|---|---|---|---|
 | `assessment_attempts` / `attempt_items` | own rows only | own rows | own rows | read all |
+| `resource_reads` | own rows only | own rows | own rows | read all |
 | `user` | own row, no role edits | own row | own row | all |
 | Content tables | read published | read all, write | transition to published | all |
 | `questions` | read published, **never** `answer_key` pre-submit | write | review | all |
@@ -864,6 +879,7 @@ These run only on a `file:` connection. A remote libSQL database answers a `PRAG
 | `assessment_attempts` | Indefinite (product value); removed on user deletion |
 | `media_assets` | Soft delete; blob purged 30 days after `deleted_at` when unreferenced |
 | `entitlements` | Indefinite |
+| `resource_reads` | Indefinite (product value); removed with the student |
 
 ---
 

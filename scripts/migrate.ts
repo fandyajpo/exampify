@@ -26,6 +26,9 @@ const MIGRATIONS = [
   // Slug-change redirects (`DATABASE_SCHEMA.md` §10.5) were the part of phase 2 that
   // depended on the studio's rename flow, so they ship as their own additive file.
   { id: "redirects", file: "../db/schema.redirects.sql" },
+  // Study progress (`DATABASE_SCHEMA.md` §9.5): the per-student read record behind
+  // `GET /api/v1/progress/study`.
+  { id: "phase5", file: "../db/schema.phase5.sql" },
 ] as const;
 
 function statementsFrom(sql: string): string[] {

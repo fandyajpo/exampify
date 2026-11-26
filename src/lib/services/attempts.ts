@@ -336,7 +336,11 @@ function selectionFilter(
   const questionTypes = [...new Set(input.questionTypes)] as QuestionType[];
   return {
     ...(input.difficulty === "any" ? {} : { difficulty: input.difficulty }),
-    questionTypes,
+    // An empty list is "no type filter", not "no types": a client that does not care about
+    // question type sends `[]`, and widening it to every type is the only reading that makes
+    // the default §5.1 request produce a set. `pickQuestions` keeps the opposite rule for an
+    // explicit empty list, so the translation happens here, once.
+    ...(questionTypes.length > 0 ? { questionTypes } : {}),
     order: input.order ?? "random",
     seed,
   };

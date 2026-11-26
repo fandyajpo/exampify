@@ -219,6 +219,19 @@ type Suggestion = {
 
 `GET` public endpoints return `Cache-Control: public, s-maxage=60, stale-while-revalidate=300` and an `ETag` from the max `updated_at`. `If-None-Match` → `304`. Search results are cached per normalised query + filters; suggest for 60 s.
 
+### 4.4 Recording a read
+
+`POST /api/v1/resources/{resourceId}/view` — called by the reader page, no body.
+
+| Aspect | Rule |
+|---|---|
+| Auth | Optional. A signed-in student gets a `resource_reads` row; a signed-out visitor is ignored |
+| Response | `204` always: unknown id, unpublished resource, signed out, or a database failure |
+| CSRF | A cross-origin mutation is `403 CROSS_ORIGIN_BLOCKED` before any read (`API-11`) |
+| Repeat | A second visit updates `last_read_at`/`read_count` on the same row; it never adds one |
+
+The reader is cached per page, so no session exists at render time. The browser therefore reports the visit and the server records the fact — the same split as §16.1, and the reason `resource_viewed` stays a server event while this endpoint exists: analytics stays anonymous, progress is per student. Study progress (§6) reads `resource_reads`, not `usage_events`, so it does not expire with the 90-day analytics retention.
+
 ---
 
 ## 5. Attempt endpoints
@@ -260,6 +273,7 @@ type StudentQuestion = {
 **Rules**
 
 - Exactly the scope ids implied by `source` (extra ids ⇒ `422`).
+- `questionTypes: []` means **no type filter** and draws every type; a non-empty list is honoured exactly. The field is never a way to ask for zero questions.
 - `email_verified` required ⇒ `401 EMAIL_NOT_VERIFIED`.
 - Empty pool ⇒ `422 NO_QUESTIONS_MATCH` with `{ appliedFilters }`.
 - Smaller pool than requested ⇒ `201` with `questionCount < requestedCount`; never an error.
@@ -381,14 +395,50 @@ type ReviewItem = {
 ```ts
 type ProgressSummary = {
   totals: { attempts: number; answered: number; correct: number; accuracy: number | null;
-            studyMinutes: number; resourcesRead: number };
+            studyMinutes: number; resourcesRead: number | null };
   window: { days: number; attempts: number; answered: number; accuracy: number | null };
   focusTopics: TopicPerformance[];        // ≤ 5, weakest first
   activity: { date: string; answered: number }[];
 };
+
+type TopicPerformance = {
+  topic: { id: string; title: string; href: string };
+  subject: { id: string; name: string };
+  attempts: number; answered: number; correct: number;
+  accuracy: number | null;                // percentage, 2 decimals
+  lastPracticedAt: string | null;         // null only on a detail for an unpractised topic
+};
+
+type TopicPerformanceDetail = TopicPerformance & {
+  byDifficulty: { difficulty: Difficulty; answered: number; correct: number; accuracy: number | null }[];
+  byType: { type: QuestionType; answered: number; correct: number; accuracy: number | null }[];
+  recentAttempts: { id: string; startedAt: string; submittedAt: string | null;
+                    answered: number; correct: number; accuracy: number | null }[];   // ≤ 5
+};
+
+type StudyProgress = {
+  subject: { id: string; name: string };
+  topic: { id: string; title: string; href: string };
+  resourcesRead: number; resourcesTotal: number;
+  minutesRead: number;                    // distinct resources only
+  practised: boolean;
+  lastReadAt: string | null;
+};
 ```
 
-Rules: computed from `submitted` attempts only; `accuracy = correct/answered` over graded items, `null` (not `0`) when nothing is answered; `days` outside the enum ⇒ `422`.
+**Rules**
+
+- Computed live from `submitted` attempts: abandoned and expired attempts contribute nothing, and a re-grade is visible on the next read. No derived table is read — `user_topic_stats` remains an open decision (`OQ-DB3`), and a cache may be added behind this contract without changing it.
+- `accuracy = correct / graded` as a **percentage**, where `graded` counts items with a stored verdict. An item whose key no longer parses has no verdict and leaves both sides alone; nothing answered ⇒ `null`, never `0`.
+- `answered` counts items with a stored answer; `correct` counts items graded right. The two differ only when an item is ungradable.
+- Items are attributed to the question's **primary** topic, so a question cross-listed into several topics counts once, under the topic the review links to. A subject- or chapter-wide practice can therefore light up more than one row.
+- `days` is `7`, `30` or `90`; anything else ⇒ `422`. `window` and `activity` cover the last `days` calendar days in UTC, today included, and `activity` always has exactly `days` buckets.
+- `focusTopics` needs ≥ 5 answers and < 60 % accuracy, is ordered weakest first (ties: more answers first), and is capped at 5.
+- `topics` is sorted by `accuracy` (default `asc`, weakest first) or `lastPracticed` (default `desc`, most recent first). A topic with nothing graded sorts last in either direction. Cursor-paginated in the §10 envelope.
+- `topics/{topicId}` for a topic the student never practised is a `200` with zeroes and `null` accuracy — not a `404`. Only an unknown topic id is refused.
+- `totals.studyMinutes` is time spent inside submitted attempts, from their recorded durations.
+- `totals.resourcesRead` counts distinct resources the student has opened, from `resource_reads` (§4.4) — not from the 90-day analytics stream.
+- `study` returns one row per topic that has at least one published resource: unpaginated (a student's topics are bounded by the catalogue), most recently read first and never-read last, filtered by `subjectId`. Reading comes from `resource_reads` and practice from `submitted` attempts, so neither number can inflate the other; a topic read but never practised is the row the table exists for.
 
 ---
 

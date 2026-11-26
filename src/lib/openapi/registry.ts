@@ -79,6 +79,15 @@ import {
   saveAnswersSchema,
   submitEnvelopeSchema,
 } from "@/lib/validation/attempts";
+import {
+  progressSummaryEnvelopeSchema,
+  progressSummaryQuerySchema,
+  studyProgressListSchema,
+  studyProgressQuerySchema,
+  topicPerformanceDetailEnvelopeSchema,
+  topicPerformanceListSchema,
+  topicPerformanceQuerySchema,
+} from "@/lib/validation/progress";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
 
@@ -95,7 +104,7 @@ import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
  * describe the whole surface ahead of the code.
  */
 
-export type OpenApiTag = "meta" | "analytics" | "internal" | "practice" | "studio";
+export type OpenApiTag = "meta" | "analytics" | "internal" | "practice" | "progress" | "studio";
 
 /** The methods a route handler may export. `lib/openapi/routes.ts` scans for the same list. */
 export const METHODS = ["get", "post", "patch", "delete"] as const;
@@ -349,6 +358,93 @@ const OVERVIEW_ROUTES: Operation[] = [
       { status: 200, description: "Counts, gaps and recent edits.", schema: studioOverviewEnvelopeSchema },
       error(401),
       error(403),
+    ],
+  },
+];
+
+/**
+ * `§6`: the dashboard surface. Derived from submitted attempts, never from a cache table.
+ * Session-authenticated and email-verified, and always scoped to the caller.
+ */
+const PROGRESS_ROUTES: Operation[] = [
+  {
+    method: "get",
+    path: "/api/v1/progress/summary",
+    operationId: "progress-summary",
+    summary: "Read the dashboard summary",
+    description:
+      "Any signed-in, email-verified student; the numbers are always the caller's own. Computed live from `submitted` attempts, so a re-grade is reflected on the next read. " +
+      "`accuracy` is `correct / graded` as a percentage and `null` — not `0` — when nothing is graded; an item whose key no longer parses is excluded from both sides. " +
+      "`window` and `activity` cover the last `days` calendar days in UTC, today included. `focusTopics` holds at most five topics with at least five answers and under 60 % accuracy, weakest first. " +
+      "`totals.studyMinutes` is time inside submitted attempts; `totals.resourcesRead` is `null` because a cached public read cannot be attributed to a student.",
+    tag: "progress",
+    request: progressSummaryQuerySchema,
+    responses: [
+      { status: 200, description: "Totals, the window, focus topics and the daily activity strip.", schema: progressSummaryEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 422, description: "`VALIDATION_ERROR` — `days` is one of 7, 30 or 90." },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/progress/topics",
+    operationId: "list-progress-topics",
+    summary: "List topic performance",
+    description:
+      "Any signed-in, email-verified student; only topics the caller has practised appear. One row per topic with attempts, answers, accuracy and last practised, filtered by `subjectId`. " +
+      "`sort=accuracy` defaults to weakest first and `sort=lastPracticed` to most recent first; a topic with nothing graded sorts last in either direction. Cursor-paginated in the §10 envelope, `limit` 1–50.",
+    tag: "progress",
+    request: topicPerformanceQuerySchema,
+    responses: [
+      { status: 200, description: "One page of topic performance rows.", schema: topicPerformanceListSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 422, description: "`VALIDATION_ERROR` or `INVALID_CURSOR`." },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/progress/study",
+    operationId: "study-progress",
+    summary: "Read study progress",
+    description:
+      "Any signed-in, email-verified student. One row per topic that has at least one published resource: resources read, resources total, the reading minutes those represent and whether the topic has been practised. " +
+      "Reading comes from the student's own `resource_reads` rows, so a repeat visit updates a row instead of inflating a count and nothing decays with analytics retention; practice comes from `submitted` attempts. " +
+      "Unpaginated by contract — a student's topics are bounded by the catalogue — ordered most recently read first, never-read last. `?subjectId=` narrows it.",
+    tag: "progress",
+    request: studyProgressQuerySchema,
+    responses: [
+      { status: 200, description: "One row per topic with published resources.", schema: studyProgressListSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 422, description: "`VALIDATION_ERROR` for an unknown query parameter." },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/resources/{resourceId}/view",
+    operationId: "record-resource-view",
+    summary: "Record a resource read",
+    description:
+      "Called by the reader itself. No body, and no session is required: a signed-in student gets a `resource_reads` row (a repeat visit updates it), a signed-out visitor is ignored, and an unknown or unpublished id is a silent no-op. " +
+      "`204` in every case — a progress row is never worth an error in a student's reader, and the unconditional answer cannot confirm that a draft exists. Cross-origin mutations are `403` before any read.",
+    tag: "progress",
+    responses: [
+      { status: 204, description: "Recorded, or deliberately dropped." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/progress/topics/{topicId}",
+    operationId: "get-progress-topic",
+    summary: "Read one topic's performance",
+    description:
+      "Any signed-in, email-verified student. The same row the table shows, plus an accuracy breakdown by difficulty and by question type (every entry present, zeroes included) and the five latest submitted attempts that included the topic. " +
+      "A topic the caller never practised is a `200` with zeroes and a `null` accuracy; only an unknown topic id is a `404`.",
+    tag: "progress",
+    responses: [
+      { status: 200, description: "The topic's performance and breakdown.", schema: topicPerformanceDetailEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 404, description: "`NOT_FOUND` — no such topic." },
     ],
   },
 ];
@@ -1238,6 +1334,7 @@ export const OPERATIONS: readonly Operation[] = [
     ],
   },
   ...ATTEMPT_ROUTES,
+  ...PROGRESS_ROUTES,
   ...RESOURCE_ROUTES,
   ...QUESTION_ROUTES,
   ...ASSESSMENT_ROUTES,

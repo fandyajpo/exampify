@@ -32,6 +32,10 @@
       "description": "Student practice and attempts. Session-authenticated and email-verified; every row is owned by the caller."
     },
     {
+      "name": "progress",
+      "description": "Student progress and dashboard. Derived live from the caller's submitted attempts."
+    },
+    {
       "name": "studio",
       "description": "Authoring studio. Session-authenticated; reads need `author`+, taxonomy writes need `admin`."
     }
@@ -4045,6 +4049,826 @@
           }
         },
         "description": "Serves the committed `openapi.json` in non-production only (`OQ-API2` is unresolved, so a public contract is not assumed). Returns 404 in production."
+      }
+    },
+    "/api/v1/progress/study": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Read study progress",
+        "operationId": "study-progress",
+        "responses": {
+          "200": {
+            "description": "One row per topic with published resources.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "subject": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "topic": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "href": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "href"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "resourcesRead": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "resourcesTotal": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "minutesRead": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "practised": {
+                            "type": "boolean"
+                          },
+                          "lastReadAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "subject",
+                          "topic",
+                          "resourcesRead",
+                          "resourcesTotal",
+                          "minutesRead",
+                          "practised",
+                          "lastReadAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          }
+        },
+        "description": "Any signed-in, email-verified student. One row per topic that has at least one published resource: resources read, resources total, the reading minutes those represent and whether the topic has been practised. Reading comes from the student's own `resource_reads` rows, so a repeat visit updates a row instead of inflating a count and nothing decays with analytics retention; practice comes from `submitted` attempts. Unpaginated by contract — a student's topics are bounded by the catalogue — ordered most recently read first, never-read last. `?subjectId=` narrows it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subjectId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progress/summary": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Read the dashboard summary",
+        "operationId": "progress-summary",
+        "responses": {
+          "200": {
+            "description": "Totals, the window, focus topics and the daily activity strip.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "attempts": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "answered": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "correct": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "accuracy": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "studyMinutes": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "resourcesRead": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "attempts",
+                            "answered",
+                            "correct",
+                            "accuracy",
+                            "studyMinutes",
+                            "resourcesRead"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "window": {
+                          "type": "object",
+                          "properties": {
+                            "days": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "attempts": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "answered": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "accuracy": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "days",
+                            "attempts",
+                            "answered",
+                            "accuracy"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "focusTopics": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "topic": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "href": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "href"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "subject": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "attempts": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "answered": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "correct": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "accuracy": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "lastPracticedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "topic",
+                              "subject",
+                              "attempts",
+                              "answered",
+                              "correct",
+                              "accuracy",
+                              "lastPracticedAt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "activity": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string"
+                              },
+                              "answered": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "date",
+                              "answered"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "totals",
+                        "window",
+                        "focusTopics",
+                        "activity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          }
+        },
+        "description": "Any signed-in, email-verified student; the numbers are always the caller's own. Computed live from `submitted` attempts, so a re-grade is reflected on the next read. `accuracy` is `correct / graded` as a percentage and `null` — not `0` — when nothing is graded; an item whose key no longer parses is excluded from both sides. `window` and `activity` cover the last `days` calendar days in UTC, today included. `focusTopics` holds at most five topics with at least five answers and under 60 % accuracy, weakest first. `totals.studyMinutes` is time inside submitted attempts; `totals.resourcesRead` is `null` because a cached public read cannot be attributed to a student.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "default": "30",
+                    "type": "string",
+                    "enum": [
+                      "7",
+                      "30",
+                      "90"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progress/topics": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "List topic performance",
+        "operationId": "list-progress-topics",
+        "responses": {
+          "200": {
+            "description": "One page of topic performance rows.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "topic": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "href": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "href"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "subject": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "attempts": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "answered": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "correct": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "accuracy": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "lastPracticedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "topic",
+                          "subject",
+                          "attempts",
+                          "answered",
+                          "correct",
+                          "accuracy",
+                          "lastPracticedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "nextCursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "hasMore",
+                        "nextCursor"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          }
+        },
+        "description": "Any signed-in, email-verified student; only topics the caller has practised appear. One row per topic with attempts, answers, accuracy and last practised, filtered by `subjectId`. `sort=accuracy` defaults to weakest first and `sort=lastPracticed` to most recent first; a topic with nothing graded sorts last in either direction. Cursor-paginated in the §10 envelope, `limit` 1–50.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subjectId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "sort": {
+                    "default": "lastPracticed",
+                    "type": "string",
+                    "enum": [
+                      "accuracy",
+                      "lastPracticed"
+                    ]
+                  },
+                  "dir": {
+                    "type": "string",
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ]
+                  },
+                  "limit": {
+                    "default": 20,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progress/topics/{topicId}": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Read one topic's performance",
+        "operationId": "get-progress-topic",
+        "responses": {
+          "200": {
+            "description": "The topic's performance and breakdown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "topic": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "href": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "title",
+                            "href"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "attempts": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "answered": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "correct": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "accuracy": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "lastPracticedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "byDifficulty": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "difficulty": {
+                                "type": "string",
+                                "enum": [
+                                  "easy",
+                                  "medium",
+                                  "hard",
+                                  "very_hard"
+                                ]
+                              },
+                              "answered": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "correct": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "accuracy": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "difficulty",
+                              "answered",
+                              "correct",
+                              "accuracy"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "byType": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "multiple_choice",
+                                  "multiple_select",
+                                  "true_false",
+                                  "short_answer"
+                                ]
+                              },
+                              "answered": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "correct": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "accuracy": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "answered",
+                              "correct",
+                              "accuracy"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "recentAttempts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "startedAt": {
+                                "type": "string"
+                              },
+                              "submittedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "answered": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "correct": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "accuracy": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "startedAt",
+                              "submittedAt",
+                              "answered",
+                              "correct",
+                              "accuracy"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "topic",
+                        "subject",
+                        "attempts",
+                        "answered",
+                        "correct",
+                        "accuracy",
+                        "lastPracticedAt",
+                        "byDifficulty",
+                        "byType",
+                        "recentAttempts"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          }
+        },
+        "description": "Any signed-in, email-verified student. The same row the table shows, plus an accuracy breakdown by difficulty and by question type (every entry present, zeroes included) and the five latest submitted attempts that included the topic. A topic the caller never practised is a `200` with zeroes and a `null` accuracy; only an unknown topic id is a `404`."
+      }
+    },
+    "/api/v1/resources/{resourceId}/view": {
+      "post": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Record a resource read",
+        "operationId": "record-resource-view",
+        "responses": {
+          "204": {
+            "description": "Recorded, or deliberately dropped."
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        },
+        "description": "Called by the reader itself. No body, and no session is required: a signed-in student gets a `resource_reads` row (a repeat visit updates it), a signed-out visitor is ignored, and an unknown or unpublished id is a silent no-op. `204` in every case — a progress row is never worth an error in a student's reader, and the unconditional answer cannot confirm that a draft exists. Cross-origin mutations are `403` before any read."
       }
     },
     "/api/v1/studio/assessments": {

@@ -16,6 +16,7 @@ import { cache } from "react";
 
 import { recordEvent } from "@/lib/analytics/record";
 import { BlockRenderer } from "@/components/content/block-renderer";
+import { ReadTracker } from "@/components/content/read-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { breadcrumbTrail } from "@/lib/seo/breadcrumbs";
@@ -128,6 +129,8 @@ export default async function ResourcePage({
 
       <main id="main" className="flex-1">
         <article className="mx-auto w-full max-w-[760px] px-[var(--gutter)] py-12 md:py-16">
+          {/* The page is cached, so the visit is reported from the browser (`FR-PROG-07`). */}
+          <ReadTracker resourceId={page.resource.id} />
           <Breadcrumbs items={trail} />
 
           <header className="mt-6 border-b border-line-strong pb-8">

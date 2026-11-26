@@ -34,6 +34,7 @@
 | Verification / reset tokens | `verification` | Email flows | Secret | 30 days after expiry |
 | Attempts and answers | `assessment_attempts`, `attempt_items` | The product's core value: history and review | Personal, learning record | Indefinite; removed or anonymised on deletion |
 | Derived stats | `user_topic_stats` | Dashboard accuracy | Personal | Recomputed; deleted with user |
+| Study progress | `resource_reads` | Resources read vs practised (`FR-PROG-07`) | Personal | Indefinite; deleted with user |
 | Usage events | `usage_events` | Product decisions (§[OBS](./OBSERVABILITY_AND_ANALYTICS.md)) | Pseudonymous (id + optional user id) | 90 days |
 | Anonymous visitor id | `usage_events.anonymous_id` (cookie `ex_anon`) | Counting signed-out reads | Pseudonymous | 180 days (cookie), 90 days (rows) |
 | Media uploaded by staff | Tigris + `media_assets` | Content images | May contain personal data in user-submitted files — staff-only in MVP | Until deleted |

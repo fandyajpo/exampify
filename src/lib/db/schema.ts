@@ -309,6 +309,19 @@ export interface AttemptItemsTable {
   answered_at: number | null;
 }
 
+/**
+ * One student's visit to one resource (`DATABASE_SCHEMA.md` §9.5). Product data, not
+ * analytics: it survives the 90-day `usage_events` retention, so study progress does not
+ * decay. The primary key is `(user_id, resource_id)`, so a repeat visit updates the row.
+ */
+export interface ResourceReadsTable {
+  user_id: string;
+  resource_id: string;
+  first_read_at: number;
+  last_read_at: number;
+  read_count: number;
+}
+
 /** Changed public paths (`DATABASE_SCHEMA.md` §10.5); `source_path` may be a subtree prefix. */
 export interface RedirectsTable {
   id: string;
@@ -388,4 +401,5 @@ export interface Database {
   job_runs: JobRunsTable;
   assessment_attempts: AssessmentAttemptsTable;
   attempt_items: AttemptItemsTable;
+  resource_reads: ResourceReadsTable;
 }
