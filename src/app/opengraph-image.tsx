@@ -20,13 +20,14 @@ export default function OpengraphImage(): ImageResponse {
           width: "100%",
           height: "100%",
           padding: "72px",
-          background: "#FBF7F0",
-          border: "1px solid #E4DACB",
+          // Satori cannot read CSS custom properties, so these mirror §3.1 by hand.
+          background: "#F5F5F7",
+          border: "1px solid #E3E3E8",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 6, background: "#2B4EFF" }} />
-          <div style={{ display: "flex", fontSize: 34, fontWeight: 600, color: "#141210" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0066CC" }} />
+          <div style={{ display: "flex", fontSize: 34, fontWeight: 600, color: "#1D1D1F" }}>
             Exampify
           </div>
         </div>
@@ -38,18 +39,18 @@ export default function OpengraphImage(): ImageResponse {
               fontSize: 68,
               lineHeight: 1.1,
               fontWeight: 600,
-              color: "#141210",
+              color: "#1D1D1F",
               maxWidth: 900,
             }}
           >
             Know exactly what to study next.
           </div>
-          <div style={{ display: "flex", fontSize: 30, color: "#4A423A", maxWidth: 860 }}>
+          <div style={{ display: "flex", fontSize: 30, color: "#4A4A52", maxWidth: 860 }}>
             Syllabus-shaped study notes, lessons and practice tests.
           </div>
         </div>
 
-        <div style={{ display: "flex", fontSize: 24, color: "#6B6257" }}>
+        <div style={{ display: "flex", fontSize: 24, color: "#6E6E73" }}>
           Study material · Lessons · Practice tests
         </div>
       </div>

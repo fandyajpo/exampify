@@ -9,7 +9,7 @@ import { AssessmentCreateForm } from "@/components/studio/assessment-create-form
 import { ContentStatusBadge } from "@/components/studio/content-status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { formatUtcDateTime } from "@/lib/format/datetime";
 import { searchParam, type SearchParams } from "@/lib/search-params";
 import { listAssessments } from "@/lib/services/assessments-admin";
@@ -136,17 +136,12 @@ export default async function StudioAssessmentsPage({
       >
         <label className="flex min-w-56 flex-1 flex-col gap-1 text-sm">
           <span className="font-medium text-ink-2">Search the title</span>
-          <input
-            name="q"
-            defaultValue={values.q}
-            maxLength={120}
-            className="h-10 rounded-sm border border-line-strong bg-paper-raised px-3 text-base text-ink"
-          />
+          <Input name="q" defaultValue={values.q} maxLength={120} />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-ink-2">Mode</span>
-          <Select name="mode" defaultValue={mode ?? ""} className="h-10 w-auto">
+          <Select name="mode" defaultValue={mode ?? ""} className="w-auto">
             <option value="">Any mode</option>
             {ASSESSMENT_MODES.map((candidate) => (
               <option key={candidate} value={candidate}>
@@ -161,7 +156,7 @@ export default async function StudioAssessmentsPage({
           <Select
             name="status"
             defaultValue={status ?? ""}
-            className="h-10 w-auto"
+            className="w-auto"
           >
             <option value="">Any</option>
             {STATUSES.map((candidate) => (
@@ -181,7 +176,7 @@ export default async function StudioAssessmentsPage({
         <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="dir" value={dir} />
 
-        <Button type="submit" size="sm" className="h-10">
+        <Button type="submit" size="md">
           Filter
         </Button>
         {filtered ? (

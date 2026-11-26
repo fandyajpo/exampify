@@ -9,7 +9,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const CARD =
-  "rounded-lg border border-line bg-paper-raised p-6 shadow-sm transition-[box-shadow,border-color] duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)]";
+  "rounded-lg border border-line bg-paper-raised p-6 shadow-sm transition-[box-shadow,border-color] duration-300 ease-soft";
 
 // The press belongs to the interactive card only: a static surface must not lift.
 const CARD_LINK = "lift block hover:border-line-strong hover:shadow-md";

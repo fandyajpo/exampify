@@ -53,9 +53,10 @@ export function StudioNav({
                     "flex min-h-11 items-center rounded-sm px-3 text-sm font-medium text-ink-2 transition-colors hover:bg-paper-sunk hover:text-ink",
                     variant === "panel" && "min-h-12 text-base",
                   )}
-                  /* Inset rule rather than a border: the row keeps its radius and the
-                     selected section reads as a filed tab, not a bracket. */
-                  activeClassName="bg-paper-sunk font-semibold text-ink [box-shadow:inset_3px_0_0_var(--ink)]"
+                  /* A drawn rail rather than an inset shadow or a border: an inset shadow
+                     wraps the 12 px radius and reads as a heavy bracket, and a border would
+                     shift the label off the other rows. */
+                  activeClassName="relative bg-paper-sunk font-semibold text-ink before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-ink"
                 />
               </li>
             ))}

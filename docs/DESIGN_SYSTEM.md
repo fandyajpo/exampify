@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| Version | 1.3 |
+| Version | 1.5 |
 | Status | Normative — §4.2, §5.1, §5.5, §5.4, §7 and §9.7/§9.9 describe the shipped layout system |
-| Changelog | 1.3 — Apple-style material revamp: a cool neutral palette (`--paper` `#F5F5F7`, action blue `#0066CC`), the platform system font for display and body, 8–28 px radii, diffuse neutral depth, translucent `.material` chrome with reduced-transparency and increased-contrast fallbacks, pill controls, a segmented `Tabs` control, and spring motion. 1.2 — reconciles §2, §3.1, §5.3, §5.4, §8, §9 and §11 with `globals.css`: 1 px warm hairlines and soft neutral elevation replace 2 px ink borders and hard-offset shadows, and the unused `--border-base` / `--border-bold` tokens are removed. 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
+| Changelog | 1.5 — token and doc cleanup: the duplicated `--radius-*` / `--shadow-*` declarations behind `@theme inline` are collapsed, the unused `--radius-xl` and `.glass-edge` rule are removed, every transition shares one `--ease-soft` curve (`ease-soft`), the generated OG card uses the cool palette, and §5–§8 are reconciled with the shipped values (section rhythm, hairline edges, press and lift timings). 1.4 — review pass over the studio, auth, topic and resource screens: the studio filter bars use the filled `Input`/`Select` primitives, the sidebar's active item is a drawn 3 px rail instead of an inset shadow that wrapped its radius, and the navigation sheet is opaque `paper-raised` — its nested backdrop filter sampled the header, not the page — with a scrim that no longer collapses inside the header's containing block. `--material-strong` is removed. 1.3 — Apple-style material revamp: a cool neutral palette (`--paper` `#F5F5F7`, action blue `#0066CC`), the platform system font for display and body, 8–28 px radii, diffuse neutral depth, translucent `.material` chrome with reduced-transparency and increased-contrast fallbacks, pill controls, a segmented `Tabs` control, and spring motion. 1.2 — reconciles §2, §3.1, §5.3, §5.4, §8, §9 and §11 with `globals.css`: 1 px warm hairlines and soft neutral elevation replace 2 px ink borders and hard-offset shadows, and the unused `--border-base` / `--border-bold` tokens are removed. 1.1 — records the adaptive layout revamp: fluid type scale and gutters, layout tokens (`--gutter`, `--section-y`, `--shell-max`, `--studio-max`, `--sidebar-w`), the 264 px studio sidebar and its mobile sheet, the 768 px table→card switch, and pointer-only hover lift |
 | Supersedes | Version 0.1 (materials/tutorials vocabulary, no format or search components) |
 | Depends on | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) (§3 design direction) |
 | Referenced by | [UI_UX_GUIDELINES.md](./UI_UX_GUIDELINES.md), [MVP_ROADMAP.md](./MVP_ROADMAP.md) |
@@ -31,7 +31,7 @@ A concrete, implementable design system for a **calm, material interface**: a co
 | **Hairline structure** | 1 px cool hairlines separate surfaces; they never draw the shape. A control is legible at rest without depending on its shadow | Hard 2 px outlines, a border on every row of text |
 | **Editorial hierarchy** | One display heading per viewport; the system face at 17 px/1.6 for reading, and fluid display sizes with size-specific tracking | Uniform 14 px text everywhere, one letter-spacing for every size |
 | **Colour is a label, not decoration** | One vivid action blue, five semantic callout kinds, and one identity colour per subject; nothing is coloured "because it looks nice" | Rainbow gradients, coloured text on coloured fills |
-| **Continuous geometry** | 8–28 px radii, real whitespace and diffuse neutral depth; nothing clipped, rotated or offset-block | Hard offset shadows, sticker shapes, torn paper |
+| **Continuous geometry** | 8–20 px radii, real whitespace and diffuse neutral depth; nothing clipped, rotated or offset-block | Hard offset shadows, sticker shapes, torn paper |
 | **Motion inherits physics** | Springs animate from the current on-screen value, so a transition can be reversed mid-flight; nothing loops for effect | Fixed-duration tweens that cannot be interrupted, scroll-jacking, marquees |
 | **Accessible by construction** | Every text pair is documented with its contrast; focus and every state are always visible, and materials degrade to solid surfaces | Low-contrast pastels on a neutral canvas |
 
@@ -160,7 +160,7 @@ Page gutters and section rhythm are **fluid tokens**, not breakpoint steps (§5.
 | Token | Value | Actual range | Use |
 |---|---|---|---|
 | `--gutter` | `clamp(1rem, 0.4rem + 2.4vw, 2rem)` | 16 px at ≤ 400 px, 32 px at ≥ ~1066 px | Inline padding of every shell |
-| `--section-y` | `clamp(3rem, 2rem + 4vw, 5rem)` | 48 px at ≤ 400 px, 80 px at ≥ 1200 px | Vertical rhythm between page bands |
+| `--section-y` | `clamp(3.5rem, 2rem + 5vw, 6rem)` | 56 px at ≤ 400 px, 96 px at ≥ 1280 px | Vertical rhythm between page bands |
 
 A page that needs a different gutter is a page with a layout bug, not a new padding value.
 
@@ -171,11 +171,10 @@ A page that needs a different gutter is a page with a layout bug, not a new padd
 | `radius-xs` | 8 px | Badges, inner details |
 | `radius-sm` | 12 px | Inset panels, small custom surfaces |
 | `radius-md` | 14 px | **Default**: inputs, callouts, icon tiles, question options |
-| `radius-lg` | 20 px | Cards, sheets, modals, table shells |
-| `radius-xl` | 28 px | Large editorial blocks (one per page max) |
+| `radius-lg` | 20 px | Cards, sheets, modals, table shells — the largest step |
 | `radius-full` | 9999 px | Buttons, chips, pills, avatars, step dots |
 
-Nothing above 28 px except pills, and nothing sharper than 8 px. A page with more than two `radius-xl` surfaces looks like a toy.
+Nothing above 20 px except pills, and nothing sharper than 8 px: a surface larger than a card is a sheet, and a sheet is still `radius-lg`.
 
 ### 5.3 Border
 
@@ -184,13 +183,13 @@ Structure is a **1 px cool hairline**. There is no 2 px border token: a heavier 
 | Token | Use |
 |---|---|
 | `--line` 1 px | Cards, tables, dividers, sheet edges, page-section rules |
-| `--line-strong` 1 px | Inputs, secondary buttons, table-header rule, section rules |
+| `--line-strong` 1 px | Hovered card edges, table-header rule, page-section rules |
 | `--line-soft` 1 px | Disabled controls, faint separators |
 
 Two rules:
 
-- An interactive edge uses `--line-strong`, never `--line`: a control must read as a control at rest, without depending on its shadow.
-- 3 px rules are state only — the studio's active-item inset rule and the callout's leading rule. Never draw a 2 px ink border, and never use a rule to draw a card edge: surfaces are separated by hairlines and depth.
+- A filled control carries no border at all (§9.6); an outlined surface such as a card or chip uses `--line` at rest and `--line-strong` on hover, so the edge never depends on the shadow alone.
+- 3 px rules are state only — the studio's active-item rail and the callout's leading rule. Never draw a 2 px ink border, and never use a rule to draw a card edge: surfaces are separated by hairlines and depth.
 
 The codebase has no `--border-base` / `--border-bold` tokens; do not add them back.
 
@@ -213,14 +212,13 @@ Translucency is a functional layer, not decoration: chrome floats above the cont
 | Token | Value | Use |
 |---|---|---|
 | `--material` | `rgb(255 255 255 / 0.72)` + `blur(22px) saturate(180%)` | Sticky header, studio top bar, studio sidebar |
-| `--material-strong` | `rgb(245 245 247 / 0.86)` + `blur(28px) saturate(180%)` | Mobile navigation sheets over busy content |
 | `--material-edge` | `rgb(255 255 255 / 0.6)` | The 1 px inset top edge — light catching the material |
 | `--scrim` | `rgb(29 29 31 / 0.24)` | The dimming layer behind a sheet |
 
 Three material rules:
 
-- **Never stack two materials.** A light translucent surface on another collapses legibility; a panel inside chrome is opaque `--paper-raised`.
-- **Bigger surfaces read thicker.** Sheets get the denser material and `shadow-lg`; the header gets `shadow-sm` and only after content is underneath it (a scroll edge effect, never a permanent divider at the top of a page).
+- **Never stack two materials.** A light translucent surface on another collapses legibility; a panel inside chrome is opaque `--paper-raised`. The navigation sheet is therefore opaque: it opens inside the sticky header's `backdrop-filter`, where a second backdrop filter has the bar rather than the page as its backdrop, so a translucent sheet would show sharp text through it.
+- **Bigger surfaces read thicker.** A sheet gets `paper-raised` and `shadow-lg`; the header gets `shadow-sm` and only after content is underneath it (a scroll edge effect, never a permanent divider at the top of a page).
 - **Degrade honestly.** `prefers-reduced-transparency: reduce` and `prefers-contrast: more` both replace every material with an opaque surface and drop the blur.
 
 **Interaction convention (important for consistency):**
@@ -230,10 +228,10 @@ Three material rules:
 - Active: surfaces `scale(0.985)`, buttons and chips `scale(0.97)` (`.press`); the shadow stays as it was
 - Disabled: `shadow-none`, `transform-none`, muted fill
 
-One shared `.lift` utility carries this convention for every interactive surface (buttons, card links, subject cards). It is defined in two media blocks:
+Two utilities carry this convention, and both use the one `--ease-soft` curve rather than a literal: `.lift` for a surface that raises (card links, subject cards, buttons) and `.press` for a control that only presses. Each is defined in two media blocks:
 
-1. `@media (prefers-reduced-motion: no-preference)` — the 120 ms transition and the `:active` press (`translate(2px,2px)`).
-2. `@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)` — the `:hover` lift (`translate(-1px,-1px)`).
+1. `@media (prefers-reduced-motion: no-preference)` — the 200–220 ms transition, the `:active` press (`.lift` → `scale(0.985)`, `.press` → `scale(0.97)`) and the shadow/colour state change.
+2. `@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)` — the `:hover` lift (`translateY(-2px)`).
 
 **Hover lift is a pointer-only affordance.** On a touch screen `:hover` sticks after a tap, so a tapped row or card stays raised, shifts its neighbours and looks selected. The lift therefore never fires on coarse pointers; `:active` press feedback still fires everywhere, and colour/border/shadow state changes remain on every device. Never re-introduce an ungated `:hover` transform, and never gate it on `@media (hover: none)` as a workaround — gate on the positive capability query.
 
@@ -248,7 +246,7 @@ The layout is **CSS-first**: fluid tokens do the continuous work, and breakpoint
 | Token | Value | Use |
 |---|---|---|
 | `--gutter` | `clamp(1rem, 0.4rem + 2.4vw, 2rem)` | Inline padding for `.shell` and `.shell-narrow` |
-| `--section-y` | `clamp(3rem, 2rem + 4vw, 5rem)` | `.section-y` vertical rhythm |
+| `--section-y` | `clamp(3.5rem, 2rem + 5vw, 6rem)` | `.section-y` vertical rhythm |
 | `--shell-max` | `1240px`, `1360px` at ≥ 1536 px | Public content shell |
 | `--studio-max` | `1120px`, `1180px` at ≥ 1536 px | Studio content column beside the sidebar |
 | `--sidebar-w` | `264px` | Studio sidebar track |
@@ -363,7 +361,6 @@ Rules:
   --radius-sm: 12px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --radius-xl: 28px;
 
   --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05);
   --shadow-md:
@@ -373,17 +370,19 @@ Rules:
 
   /* Materials (§5.4). Never stack one on another. */
   --material: rgb(255 255 255 / 0.72);
-  --material-strong: rgb(245 245 247 / 0.86);
   --material-blur: 22px;
   --material-saturate: 180%;
   --material-edge: rgb(255 255 255 / 0.6);
   --scrim: rgb(29 29 31 / 0.24);
 
+  /* One easing curve for every transition and entrance (§7). */
+  --ease-soft: cubic-bezier(0.22, 0.75, 0.28, 1);
+
   /* No --border-* tokens: structure is a 1 px hairline (§5.3). */
 
   /* Adaptive layout (§5.5). Fluid by default; breakpoints only change structure. */
   --gutter: clamp(1rem, 0.4rem + 2.4vw, 2rem);
-  --section-y: clamp(3rem, 2rem + 4vw, 5rem);
+  --section-y: clamp(3.5rem, 2rem + 5vw, 6rem);
   --shell-max: 1240px;
   --studio-max: 1120px;
   --sidebar-w: 264px;
@@ -406,35 +405,7 @@ Rules:
 }
 ```
 
-Tailwind theme mapping (Tailwind v4 `@theme` or v3 `theme.extend`):
-
-```ts
-// tailwind.config.ts (excerpt)
-theme: {
-  extend: {
-    colors: {
-      paper: { DEFAULT: 'var(--paper)', raised: 'var(--paper-raised)', sunk: 'var(--paper-sunk)', accent: 'var(--paper-accent)' },
-      ink: { DEFAULT: 'var(--ink)', 2: 'var(--ink-2)', 3: 'var(--ink-3)' },
-      line: { DEFAULT: 'var(--line)', strong: 'var(--line-strong)', soft: 'var(--line-soft)' },
-      cobalt: 'var(--cobalt)', sunbeam: 'var(--sunbeam)', leaf: 'var(--leaf)',
-      mint: 'var(--mint)', coral: 'var(--coral)', lilac: 'var(--lilac)', sky: 'var(--sky)', blush: 'var(--blush)',
-    },
-    borderRadius: { xs: '8px', sm: '12px', md: '14px', lg: '20px', xl: '28px' },
-    boxShadow: {
-      sm: '0 1px 1px rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05)',
-      md: '0 2px 6px -2px rgb(0 0 0 / 0.08), 0 12px 28px -12px rgb(0 0 0 / 0.16)',
-      lg: '0 4px 14px -4px rgb(0 0 0 / 0.1), 0 32px 64px -24px rgb(0 0 0 / 0.24)',
-    },
-    fontFamily: {
-      // One system stack for display and body; the serif and mono are the only downloads.
-      display: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto'],
-      sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto'],
-      editorial: ['var(--font-instrument)', 'ui-serif'],
-      mono: ['var(--font-jetbrains)', 'ui-monospace'],
-    },
-  },
-}
-```
+That `@theme inline` block **is** the theme mapping: colours, radii, shadows, the easing curve and the font stacks all resolve to the `:root` tokens above, so a component writes `bg-paper-sunk`, `rounded-lg` or `ease-soft` and never a raw value. There is no `tailwind.config.ts` — Tailwind v4 reads its theme from `globals.css`, and a second config would be a second source of truth.
 
 **Rules:** components consume tokens, never raw hex. A hex value inside a component is a review-blocking defect. Subject colours are applied by setting `--subject-ink` / `--subject-fill` on a wrapper from `color_token`.
 
@@ -493,8 +464,8 @@ Five semantic kinds mapping to `CONTENT_MODEL.md` §5.1: `tip` (sunbeam tint), `
 - `Header`: 68 px tall (64 mobile), a translucent `--material` surface whose content scrolls underneath, logo left, pill nav links, search + account right. Sticky; its hairline and `shadow-sm` appear only once content is beneath it, so the top of a page has no divider. Falls back to an opaque surface under `prefers-reduced-transparency`.
 - `Breadcrumbs`: `text-sm`, `ink-2`, `/` separators (not `>`), current page in `ink` with `aria-current`.
 - `Tabs`: a segmented control — a `paper-sunk` pill track with the active segment raised on white and carrying `shadow-sm`; used for topic hub sections and studio editors.
-- `Sidebar` (studio): **264 px** (`--sidebar-w`), paper surface, 1 px right rule, grouped links (Content / Library / Governance), active item = paper-sunk fill + 3 px inset ink rule + `aria-current="page"`. It is persistent — sticky, full viewport height, independently scrolling — from **1024 px** (`lg`) up. It never shrinks into an icon rail: below 1024 px it is replaced by a sheet.
-- `StudioMobileMenu` (the studio sheet, below 1024 px): a sticky 64 px top bar with the wordmark and a 44 × 44 menu button, opening a full-width sheet docked under the bar (`max-height: calc(100dvh − 4rem)`, scrollable, `shadow-md`) over an ink-tinted scrim. It is a native `<details>` with Escape, outside-click and route-change dismissal, so it works without JavaScript. No focus trap is claimed for it; it is a disclosure, not a modal dialog.
+- `Sidebar` (studio): **264 px** (`--sidebar-w`), paper surface, 1 px right rule, grouped links (Content / Library / Governance), active item = paper-sunk fill + 3 px ink rail drawn as a pseudo-element, so the radius is never wrapped by an inset shadow, + `aria-current="page"`. It is persistent — sticky, full viewport height, independently scrolling — from **1024 px** (`lg`) up. It never shrinks into an icon rail: below 1024 px it is replaced by a sheet.
+- `StudioMobileMenu` (the studio sheet, below 1024 px): a sticky 64 px top bar with the wordmark and a 44 × 44 menu button, opening a full-width, opaque `paper-raised` sheet docked under the bar (`max-height: calc(100dvh − 4rem)`, scrollable, `shadow-lg`) over an ink-tinted scrim. The scrim takes an explicit `calc(100dvh − 4rem)` height rather than stretching with `bottom: 0`, because the header's `backdrop-filter` makes the bar the containing block for its fixed descendants. It is a native `<details>` with Escape, outside-click and route-change dismissal, so it works without JavaScript. No focus trap is claimed for it; it is a disclosure, not a modal dialog.
 - `QuestionPalette`: numbered grid, states: current (ink border + cobalt), answered (sunbeam), unanswered (paper), flagged (dashed). Shown as a bottom sheet under 768 px.
 
 ### 9.8 Feedback

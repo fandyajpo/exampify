@@ -14,7 +14,7 @@ import { QuestionCreateForm } from "@/components/studio/question-create-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { formatUtcDateTime } from "@/lib/format/datetime";
 import { searchParam, type SearchParams } from "@/lib/search-params";
 import { listQuestions } from "@/lib/services/questions-admin";
@@ -150,17 +150,12 @@ export default async function StudioQuestionsPage({
       >
         <label className="flex min-w-56 flex-1 flex-col gap-1 text-sm">
           <span className="font-medium text-ink-2">Search the stem</span>
-          <input
-            name="q"
-            defaultValue={values.q}
-            maxLength={120}
-            className="h-10 rounded-sm border border-line-strong bg-paper-raised px-3 text-base text-ink"
-          />
+          <Input name="q" defaultValue={values.q} maxLength={120} />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-ink-2">Type</span>
-          <Select name="type" defaultValue={type ?? ""} className="h-10 w-auto">
+          <Select name="type" defaultValue={type ?? ""} className="w-auto">
             <option value="">Any type</option>
             {QUESTION_TYPES.map((candidate) => (
               <option key={candidate} value={candidate}>
@@ -175,7 +170,7 @@ export default async function StudioQuestionsPage({
           <Select
             name="difficulty"
             defaultValue={difficulty ?? ""}
-            className="h-10 w-auto"
+            className="w-auto"
           >
             <option value="">Any</option>
             {DIFFICULTIES.map((candidate) => (
@@ -191,7 +186,7 @@ export default async function StudioQuestionsPage({
           <Select
             name="status"
             defaultValue={status ?? ""}
-            className="h-10 w-auto"
+            className="w-auto"
           >
             <option value="">Any</option>
             {STATUSES.map((candidate) => (
@@ -211,7 +206,7 @@ export default async function StudioQuestionsPage({
         <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="dir" value={dir} />
 
-        <Button type="submit" size="sm" className="h-10">
+        <Button type="submit" size="md">
           Filter
         </Button>
         {filtered ? (

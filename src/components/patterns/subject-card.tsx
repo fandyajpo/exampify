@@ -65,7 +65,7 @@ export function SubjectCard({
         </div>
         <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-cobalt">
           Browse chapters
-          <IconArrowRight className="size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)] group-hover:translate-x-0.5" />
+          <IconArrowRight className="size-4 transition-transform duration-300 ease-soft group-hover:translate-x-0.5" />
         </span>
       </div>
     </Link>

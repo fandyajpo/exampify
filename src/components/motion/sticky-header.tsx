@@ -20,7 +20,7 @@ export function StickyHeader({ children }: { children: ReactNode }): React.JSX.E
   return (
     <header
       className={cn(
-        "material sticky top-0 z-40 border-b transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,0.75,0.28,1)]",
+        "material sticky top-0 z-40 border-b transition-[border-color,box-shadow] duration-300 ease-soft",
         isScrolled ? "border-line shadow-sm" : "border-transparent shadow-none",
       )}
     >

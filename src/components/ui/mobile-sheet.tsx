@@ -8,8 +8,9 @@
  * click handler only add the dismissals `<details>` does not provide on its own — Escape, a
  * tap outside, arriving on a new route (a soft navigation keeps the header mounted), and
  * following a link that points at the page you are already on. The panel is a full-width
- * sheet docked under the 64 px bar with a dense material, so 48 px rows stay comfortable at
- * 320 px and the page reads as pushed back behind it.
+ * opaque sheet docked under the 64 px bar, so 48 px rows stay comfortable at 320 px. It is
+ * opaque rather than a material on purpose: it opens inside the header's `backdrop-filter`,
+ * and a nested backdrop filter has the bar — not the page — as its backdrop.
  *
  * The caller supplies the trigger's breakpoint (`hiddenFrom`) so the same sheet serves a bar
  * that collapses at `md` and one that collapses at `lg`. Links need no close callback: the
@@ -79,13 +80,18 @@ export function MobileSheet({
       </summary>
 
       {/* A real dismiss target for touch: the scrim is a button, so it is reachable and
-          labelled, not a decorative div with a click handler. */}
+          labelled, not a decorative div with a click handler.
+
+          The height is explicit rather than stretched with `bottom-0`: the sheet opens
+          inside the header's `backdrop-filter`, which makes the header the containing
+          block for fixed descendants. `top-16` and `bottom-0` then resolve against the
+          64 px bar itself and collapse the scrim to nothing. */}
       <button
         type="button"
         aria-label={`Close ${panelLabel.toLowerCase()}`}
         onClick={close}
         className={cn(
-          "fixed inset-x-0 top-16 bottom-0 z-30 cursor-default bg-[var(--scrim)]",
+          "fixed inset-x-0 top-16 z-30 h-[calc(100dvh-4rem)] cursor-default bg-[var(--scrim)]",
           breakpoint,
         )}
       />
@@ -96,7 +102,7 @@ export function MobileSheet({
             close();
         }}
         className={cn(
-          "motion-drawer material-strong fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-b-lg border-b border-line shadow-lg",
+          "motion-drawer fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-b-lg border-b border-line bg-paper-raised shadow-lg",
           breakpoint,
         )}
       >

@@ -137,11 +137,13 @@ export default async function ResourcePage({
             {page.resource.subtitle ? (
               <p className="mt-3 text-lg text-ink-2">{page.resource.subtitle}</p>
             ) : null}
-            <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-3">
+            {/* Stacked on a phone: a wrapped row leaves a separator dangling at the end of
+                the first line ("Medium ·"). The dots return once the row fits on one line. */}
+            <p className="mt-5 flex flex-col gap-y-0.5 text-sm text-ink-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
               <span>{page.resource.readingMinutes} min read</span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="hidden sm:inline">·</span>
               <span>{DIFFICULTY_LABEL[page.resource.difficulty] ?? "Medium"}</span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="hidden sm:inline">·</span>
               <span>
                 {page.context.subject.name} · {page.chapter.title}
               </span>

@@ -77,7 +77,7 @@ export function Tabs({
                 }
               }}
               className={cn(
-                "min-h-9 cursor-pointer rounded-full px-4 text-sm font-medium transition-[background-color,color,box-shadow] duration-200 ease-[cubic-bezier(0.22,0.75,0.28,1)]",
+                "min-h-9 cursor-pointer rounded-full px-4 text-sm font-medium transition-[background-color,color,box-shadow] duration-200 ease-soft",
                 isActive
                   ? "bg-paper-raised text-ink shadow-sm"
                   : "text-ink-2 hover:text-ink",

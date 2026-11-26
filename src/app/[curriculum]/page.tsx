@@ -86,7 +86,7 @@ export default async function CurriculumPage({
               <li key={level.slug}>
                 <Link
                   href={url.level(detail.slug, level.slug)}
-                  className="group flex h-full flex-col rounded-md border border-line bg-paper-raised p-6 shadow-sm transition-[box-shadow,border-color] duration-[180ms] ease-[cubic-bezier(0.2,0.6,0.2,1)] hover:border-line-strong hover:shadow-md"
+                  className="group flex h-full flex-col rounded-md border border-line bg-paper-raised p-6 shadow-sm transition-[box-shadow,border-color] duration-[180ms] ease-soft hover:border-line-strong hover:shadow-md"
                 >
                   <p className="font-display text-xl font-semibold tracking-[-0.015em] text-ink">
                     {level.name}

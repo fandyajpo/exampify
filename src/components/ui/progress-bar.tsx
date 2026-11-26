@@ -30,7 +30,7 @@ export function ProgressBar({
       className={cn("h-1.5 w-full overflow-hidden rounded-full bg-line-soft", className)}
     >
       <div
-        className="h-full rounded-full bg-subject-ink transition-[width] duration-[320ms] ease-[cubic-bezier(0.22,0.75,0.28,1)]"
+        className="h-full rounded-full bg-subject-ink transition-[width] duration-[320ms] ease-soft"
         // The only dynamic value here is the measured percentage; the colour is a token.
         style={{ width: `${percent}%` }}
       />
