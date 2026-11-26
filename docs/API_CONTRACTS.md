@@ -300,15 +300,24 @@ type SaveAnswersRequest = {
 type SubmitResponse = {
   attempt: { id: string; status: 'submitted'; startedAt: string; submittedAt: string;
              durationSeconds: number; answeredCount: number; correctCount: number;
-             scorePoints: number; maxPoints: number; scorePercent: number | null };
+             scorePoints: number; maxPoints: number; scorePercent: number | null;
+             overTimeSeconds: number | null };
   results: ReviewItem[];
 };
+
+// The right answer without its scoring rule. `null` means the stored key no longer parses,
+// so the item is reported as unavailable rather than with an invented answer.
+type CorrectAnswerView =
+  | { type: 'multiple_choice'; labels: [OptionLabel] }
+  | { type: 'multiple_select'; labels: OptionLabel[] }
+  | { type: 'true_false'; value: boolean }
+  | { type: 'short_answer'; accepted: string[] };
 
 type ReviewItem = {
   questionId: string; position: number; type: QuestionType; difficulty: Difficulty;
   stemHtml: string; media: … | null; pointsMax: number; pointsAwarded: number;
-  isCorrect: boolean | null; studentAnswer: StudentAnswer | null;
-  correctAnswer: CorrectAnswerView; explanationHtml: string;
+  isCorrect: boolean | null;   studentAnswer: StudentAnswer | null;
+  correctAnswer: CorrectAnswerView | null; explanationHtml: string;
   optionFeedback: { label: OptionLabel; feedbackHtml: string | null }[];
   contentUpdated: boolean; topic: { id: string; title: string; href: string };
 };
@@ -316,7 +325,8 @@ type ReviewItem = {
 
 - Idempotent: repeated calls return the identical payload with `200`.
 - Grades server-side in one transaction (`QUESTION_ENGINE.md` §6).
-- Duration exceeded for a timed attempt ⇒ accepted, graded, `attempt.overTimeSeconds` reported (no silent invalidation).
+- Duration exceeded for a timed attempt ⇒ accepted, graded, `attempt.overTimeSeconds` reported (no silent invalidation). `scorePercent` is a percentage (`50`), not a fraction, and `null` when nothing was gradable.
+- An item whose stored key no longer parses is graded as unavailable: it leaves the denominator alone, `isCorrect` is `null` and `correctAnswer` is `null`.
 - Expired ⇒ `409 ATTEMPT_EXPIRED`; abandoned ⇒ `409 INVALID_TRANSITION`.
 
 ### 5.5 Abandon, list, review, retry

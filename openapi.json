@@ -1049,6 +1049,529 @@
         }
       }
     },
+    "/api/v1/attempts/{attemptId}/submit": {
+      "post": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Submit an attempt and read its review",
+        "operationId": "submit-attempt",
+        "responses": {
+          "200": {
+            "description": "The graded attempt and one review item per question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "attempt": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "const": "submitted"
+                            },
+                            "startedAt": {
+                              "type": "string"
+                            },
+                            "submittedAt": {
+                              "type": "string"
+                            },
+                            "durationSeconds": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "answeredCount": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "correctCount": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "scorePoints": {
+                              "type": "number"
+                            },
+                            "maxPoints": {
+                              "type": "number"
+                            },
+                            "scorePercent": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "overTimeSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "status",
+                            "startedAt",
+                            "submittedAt",
+                            "durationSeconds",
+                            "answeredCount",
+                            "correctCount",
+                            "scorePoints",
+                            "maxPoints",
+                            "scorePercent",
+                            "overTimeSeconds"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "questionId": {
+                                "type": "string"
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "multiple_choice",
+                                  "multiple_select",
+                                  "true_false",
+                                  "short_answer"
+                                ]
+                              },
+                              "difficulty": {
+                                "type": "string",
+                                "enum": [
+                                  "easy",
+                                  "medium",
+                                  "hard",
+                                  "very_hard"
+                                ]
+                              },
+                              "stemHtml": {
+                                "type": "string"
+                              },
+                              "media": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "url": {
+                                        "type": "string"
+                                      },
+                                      "alt": {
+                                        "type": "string"
+                                      },
+                                      "width": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "height": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "url",
+                                      "alt",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "pointsMax": {
+                                "type": "number"
+                              },
+                              "pointsAwarded": {
+                                "type": "number"
+                              },
+                              "isCorrect": {
+                                "type": [
+                                  "boolean",
+                                  "null"
+                                ]
+                              },
+                              "studentAnswer": {
+                                "anyOf": [
+                                  {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_choice"
+                                          },
+                                          "option": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  "A",
+                                                  "B",
+                                                  "C",
+                                                  "D",
+                                                  "E",
+                                                  "F",
+                                                  "G",
+                                                  "H"
+                                                ]
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "option"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_select"
+                                          },
+                                          "options": {
+                                            "maxItems": 8,
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string",
+                                              "enum": [
+                                                "A",
+                                                "B",
+                                                "C",
+                                                "D",
+                                                "E",
+                                                "F",
+                                                "G",
+                                                "H"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "options"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "true_false"
+                                          },
+                                          "value": {
+                                            "type": [
+                                              "boolean",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "v": {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "const": "short_answer"
+                                          },
+                                          "text": {
+                                            "type": "string",
+                                            "maxLength": 500
+                                          }
+                                        },
+                                        "required": [
+                                          "v",
+                                          "type",
+                                          "text"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "correctAnswer": {
+                                "anyOf": [
+                                  {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_choice"
+                                          },
+                                          "labels": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string",
+                                              "enum": [
+                                                "A",
+                                                "B",
+                                                "C",
+                                                "D",
+                                                "E",
+                                                "F",
+                                                "G",
+                                                "H"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "labels"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "multiple_select"
+                                          },
+                                          "labels": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string",
+                                              "enum": [
+                                                "A",
+                                                "B",
+                                                "C",
+                                                "D",
+                                                "E",
+                                                "F",
+                                                "G",
+                                                "H"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "labels"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "true_false"
+                                          },
+                                          "value": {
+                                            "type": "boolean"
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "short_answer"
+                                          },
+                                          "accepted": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "accepted"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "explanationHtml": {
+                                "type": "string"
+                              },
+                              "optionFeedback": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "label": {
+                                      "type": "string",
+                                      "enum": [
+                                        "A",
+                                        "B",
+                                        "C",
+                                        "D",
+                                        "E",
+                                        "F",
+                                        "G",
+                                        "H"
+                                      ]
+                                    },
+                                    "feedbackHtml": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "feedbackHtml"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "contentUpdated": {
+                                "type": "boolean"
+                              },
+                              "topic": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "href": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "href"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "questionId",
+                              "position",
+                              "type",
+                              "difficulty",
+                              "stemHtml",
+                              "media",
+                              "pointsMax",
+                              "pointsAwarded",
+                              "isCorrect",
+                              "studentAnswer",
+                              "correctAnswer",
+                              "explanationHtml",
+                              "optionFeedback",
+                              "contentUpdated",
+                              "topic"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "attempt",
+                        "results"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          }
+        },
+        "description": "Any signed-in, email-verified student, on their own attempt. No body. Grading runs server-side against the snapshot taken at creation, and the totals, per-item outcomes and duration are written in one transaction. Idempotent: a second submit returns the first one's payload with `200`, so a retried request never scores twice. A timed attempt that ran over its limit is accepted and graded, with `attempt.overTimeSeconds` reported. Only the review carries the key: `correctAnswer` is the right answer without its scoring rule, and `optionFeedback`/`explanationHtml` appear here and nowhere in the attempt itself."
+      }
+    },
     "/api/v1/events": {
       "post": {
         "tags": [

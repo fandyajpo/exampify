@@ -111,7 +111,68 @@ export const attemptEnvelopeSchema = z.object({
   data: z.object({ attempt: attemptDtoSchema, questions: z.array(studentQuestionSchema) }),
 });
 
+// ---------------------------------------------------------------------------
+// POST /api/v1/attempts/{attemptId}/submit (§5.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * The key as a student may see it after submitting: the right answer, without the scoring
+ * rule. `null` means the stored key no longer parses, so the item is reported as unavailable
+ * rather than with an invented answer (`QUESTION_ENGINE.md` §3 fails closed).
+ */
+export const correctAnswerViewSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("multiple_choice"), labels: z.array(optionLabelSchema) }).strict(),
+  z.object({ type: z.literal("multiple_select"), labels: z.array(optionLabelSchema) }).strict(),
+  z.object({ type: z.literal("true_false"), value: z.boolean() }).strict(),
+  z.object({ type: z.literal("short_answer"), accepted: z.array(z.string()) }).strict(),
+]);
+
+export const reviewItemSchema = z.object({
+  questionId: z.string(),
+  position: z.number().int(),
+  type: questionTypeSchema,
+  difficulty: difficultySchema,
+  stemHtml: z.string(),
+  media: studentQuestionSchema.shape.media,
+  pointsMax: z.number(),
+  pointsAwarded: z.number(),
+  isCorrect: z.boolean().nullable(),
+  studentAnswer: studentAnswerSchema.nullable(),
+  correctAnswer: correctAnswerViewSchema.nullable(),
+  explanationHtml: z.string(),
+  optionFeedback: z.array(
+    z.object({ label: optionLabelSchema, feedbackHtml: z.string().nullable() }),
+  ),
+  /** The question changed after this attempt was snapshotted. The score is not rewritten. */
+  contentUpdated: z.boolean(),
+  topic: z.object({ id: z.string(), title: z.string(), href: z.string() }),
+});
+
+/** `scorePercent` is a percentage, not a fraction: `50`, not `0.5`; `null` when ungradable. */
+export const submitAttemptSchema = z.object({
+  id: z.string(),
+  status: z.literal("submitted"),
+  startedAt: z.string(),
+  submittedAt: z.string(),
+  durationSeconds: z.number().int(),
+  answeredCount: z.number().int(),
+  correctCount: z.number().int(),
+  scorePoints: z.number(),
+  maxPoints: z.number(),
+  scorePercent: z.number().nullable(),
+  /** Timed attempts only: accepted and graded, never invalidated (`§5.4`). */
+  overTimeSeconds: z.number().int().nullable(),
+});
+
+export const submitEnvelopeSchema = z.object({
+  data: z.object({ attempt: submitAttemptSchema, results: z.array(reviewItemSchema) }),
+});
+
 export type CreateAttemptInput = z.infer<typeof createAttemptSchema>;
+export type CorrectAnswerView = z.infer<typeof correctAnswerViewSchema>;
+export type ReviewItem = z.infer<typeof reviewItemSchema>;
+export type SubmitAttemptDto = z.infer<typeof submitAttemptSchema>;
+export type SubmitEnvelope = z.infer<typeof submitEnvelopeSchema>;
 export type AttemptDto = z.infer<typeof attemptDtoSchema>;
 export type StudentQuestion = z.infer<typeof studentQuestionSchema>;
 export type AttemptEnvelope = z.infer<typeof attemptEnvelopeSchema>;

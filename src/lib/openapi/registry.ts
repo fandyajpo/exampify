@@ -69,7 +69,7 @@ import {
 } from "@/lib/validation/assessments";
 import { studioOverviewEnvelopeSchema } from "@/lib/validation/overview";
 import { transitionEnvelopeSchema, transitionSchema } from "@/lib/validation/transitions";
-import { attemptEnvelopeSchema, createAttemptSchema } from "@/lib/validation/attempts";
+import { attemptEnvelopeSchema, createAttemptSchema, submitEnvelopeSchema } from "@/lib/validation/attempts";
 
 import { countsEnvelopeSchema, healthEnvelopeSchema } from "./schemas";
 
@@ -368,6 +368,27 @@ const ATTEMPT_ROUTES: Operation[] = [
       {
         status: 422,
         description: "`VALIDATION_ERROR`, `UNKNOWN_FIELD`, or `NO_QUESTIONS_MATCH` with `appliedFilters`.",
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/attempts/{attemptId}/submit",
+    operationId: "submit-attempt",
+    summary: "Submit an attempt and read its review",
+    description:
+      "Any signed-in, email-verified student, on their own attempt. No body. Grading runs server-side against the snapshot taken at creation, and the totals, per-item outcomes and duration are written in one transaction. " +
+      "Idempotent: a second submit returns the first one's payload with `200`, so a retried request never scores twice. A timed attempt that ran over its limit is accepted and graded, with `attempt.overTimeSeconds` reported. " +
+      "Only the review carries the key: `correctAnswer` is the right answer without its scoring rule, and `optionFeedback`/`explanationHtml` appear here and nowhere in the attempt itself.",
+    tag: "practice",
+    responses: [
+      { status: 200, description: "The graded attempt and one review item per question.", schema: submitEnvelopeSchema },
+      { status: 401, description: "`UNAUTHENTICATED`, or `EMAIL_NOT_VERIFIED`." },
+      { status: 403, description: "`CROSS_ORIGIN_BLOCKED`." },
+      { status: 404, description: "The attempt does not exist, or belongs to another student." },
+      {
+        status: 409,
+        description: "`ATTEMPT_EXPIRED` for an expired attempt, or `INVALID_TRANSITION` for an abandoned one.",
       },
     ],
   },

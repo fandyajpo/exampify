@@ -7,9 +7,17 @@ import type { Database } from "@/lib/db/schema";
 import { HttpError, notFound } from "@/lib/http/errors";
 import { uuidv7 } from "@/lib/ids";
 import { markdownTextToHtml } from "@/lib/markdown";
+import { gradeAttempt } from "@/lib/practice/grading";
 import { selectQuestions, type SelectionFilter, type SelectedQuestion } from "@/lib/practice/selection";
 import type { Actor } from "@/lib/rbac";
-import type { AttemptDto, CreateAttemptInput, StudentQuestion } from "@/lib/validation/attempts";
+import { loadAttemptReview, loadMediaMap, parseAnswerKey, parseStudentAnswer } from "@/lib/services/attempt-review";
+import type {
+  AttemptDto,
+  CreateAttemptInput,
+  ReviewItem,
+  StudentQuestion,
+  SubmitAttemptDto,
+} from "@/lib/validation/attempts";
 import type { QuestionType } from "@/lib/validation/questions";
 
 /**
@@ -382,27 +390,10 @@ async function loadStudentQuestions(db: Executor, attemptId: string): Promise<St
     optionsByQuestion.set(option.questionId, list);
   }
 
-  const mediaIds = items.flatMap((item) => (item.mediaId === null ? [] : [item.mediaId]));
-  const media = new Map<string, NonNullable<StudentQuestion["media"]>>();
-  if (mediaIds.length > 0) {
-    const assets = await db
-      .selectFrom("media_assets")
-      .select(["id", "public_url", "alt_text", "width", "height"])
-      .where("id", "in", mediaIds)
-      .where("status", "=", "ready")
-      .execute();
-    for (const asset of assets) {
-      // `§5.1` types width/height as numbers, so an asset without them is reported as absent
-      // rather than as a misleading `0`.
-      if (asset.public_url === null || asset.width === null || asset.height === null) continue;
-      media.set(asset.id, {
-        url: asset.public_url,
-        alt: asset.alt_text,
-        width: asset.width,
-        height: asset.height,
-      });
-    }
-  }
+  const media = await loadMediaMap(
+    db,
+    items.flatMap((item) => (item.mediaId === null ? [] : [item.mediaId])),
+  );
 
   return items.map((item) => ({
     id: item.questionId,
@@ -558,6 +549,170 @@ export async function createAttempt(
     attempt: toAttemptDto(row, config),
     questions: await loadStudentQuestions(db, attemptId),
     replayed: false,
+  };
+}
+
+/**
+ * `POST /api/v1/attempts/{id}/submit` (`API_CONTRACTS.md` §5.4).
+ *
+ * Submission is a state change, not a computation the client may repeat: the attempt row is
+ * claimed with `UPDATE … WHERE status = 'in_progress'`, so two concurrent calls cannot grade
+ * twice, and the loser reads back the winner's result. Grading, the totals and the per-item
+ * outcomes are written in one transaction — a failure leaves the attempt in progress rather
+ * than half-scored.
+ *
+ * `duration_seconds` is the elapsed time, and a timed attempt that ran over its limit is
+ * accepted with `overTimeSeconds` reported; nothing is silently invalidated.
+ */
+
+function toSubmitDto(
+  row: Database["assessment_attempts"],
+  config: Record<string, unknown>,
+): SubmitAttemptDto {
+  const submittedAt = row.submitted_at ?? row.updated_at;
+  const durationSeconds =
+    row.duration_seconds ?? Math.max(0, Math.round((submittedAt - row.started_at) / 1_000));
+  const limit = typeof config.durationSeconds === "number" ? config.durationSeconds : null;
+
+  return {
+    id: row.id,
+    status: "submitted",
+    startedAt: ISO(row.started_at),
+    submittedAt: ISO(submittedAt),
+    durationSeconds,
+    answeredCount: row.answered_count,
+    correctCount: row.correct_count,
+    scorePoints: POINTS(row.score_x100),
+    maxPoints: POINTS(row.max_score_x100),
+    scorePercent: row.score_percent_x100 === null ? null : row.score_percent_x100 / 100,
+    overTimeSeconds: limit !== null && durationSeconds > limit ? durationSeconds - limit : null,
+  };
+}
+
+export type SubmitAttemptResult = { attempt: SubmitAttemptDto; results: ReviewItem[] };
+
+export async function submitAttempt(actor: Actor, attemptId: string): Promise<SubmitAttemptResult> {
+  const db = await getDb();
+  const attempt = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attemptId)
+    .where("user_id", "=", actor.id)
+    .executeTakeFirst();
+
+  // Another user's id is a `404`, never a `403`: the contract does not confirm existence.
+  if (!attempt) throw notFound("attempt");
+
+  if (attempt.status === "abandoned") {
+    throw new HttpError(
+      409,
+      "INVALID_TRANSITION",
+      "This attempt was abandoned, so it cannot be submitted.",
+    );
+  }
+
+  if (attempt.status === "submitted") {
+    return {
+      attempt: toSubmitDto(attempt, parseConfig(attempt.config)),
+      results: await loadAttemptReview(db, attempt.id),
+    };
+  }
+
+  const now = Date.now();
+  if (attempt.status === "expired" || now > attempt.expires_at) {
+    if (attempt.status === "in_progress") {
+      await db
+        .updateTable("assessment_attempts")
+        .set({ status: "expired", updated_at: now })
+        .where("id", "=", attempt.id)
+        .where("status", "=", "in_progress")
+        .execute();
+    }
+    throw new HttpError(409, "ATTEMPT_EXPIRED", "This attempt expired before it was submitted.");
+  }
+
+  let claimed = false;
+
+  await db.transaction().execute(async (trx) => {
+    const claim = await trx
+      .updateTable("assessment_attempts")
+      .set({ status: "submitted", submitted_at: now, last_activity_at: now, updated_at: now })
+      .where("id", "=", attempt.id)
+      .where("user_id", "=", actor.id)
+      .where("status", "=", "in_progress")
+      .executeTakeFirst();
+
+    // A concurrent submit won the row; its result is this request's answer.
+    if (Number(claim.numUpdatedRows) === 0) return;
+    claimed = true;
+
+    const items = await trx
+      .selectFrom("attempt_items as ai")
+      .innerJoin("questions as q", "q.id", "ai.question_id")
+      .select([
+        "ai.id as id",
+        "ai.question_id as questionId",
+        "ai.points_x100_max as pointsX100Max",
+        "ai.selected_answer as selectedAnswer",
+        "q.answer_key as answerKey",
+      ])
+      .where("ai.attempt_id", "=", attempt.id)
+      .orderBy("ai.position")
+      .execute();
+
+    const grade = gradeAttempt(
+      items.map((item) => {
+        const answerKey = parseAnswerKey(item.answerKey);
+        return {
+          questionId: item.questionId,
+          pointsMax: item.pointsX100Max,
+          answer: parseStudentAnswer(item.selectedAnswer),
+          question: answerKey === null ? null : { id: item.questionId, answerKey },
+        };
+      }),
+    );
+
+    await trx
+      .updateTable("assessment_attempts")
+      .set({
+        answered_count: grade.answeredCount,
+        correct_count: grade.correctCount,
+        score_x100: grade.scoreX100,
+        max_score_x100: grade.maxScoreX100,
+        score_percent_x100: grade.scorePercentX100,
+        duration_seconds: Math.max(0, Math.round((now - attempt.started_at) / 1_000)),
+        updated_at: now,
+      })
+      .where("id", "=", attempt.id)
+      .execute();
+
+    for (const [index, item] of items.entries()) {
+      const result = grade.items[index]!;
+      await trx
+        .updateTable("attempt_items")
+        .set({
+          is_correct: result.isCorrect === null ? null : result.isCorrect ? 1 : 0,
+          points_x100_awarded: result.points,
+          feedback: JSON.stringify(result.feedback),
+        })
+        .where("id", "=", item.id)
+        .execute();
+    }
+  });
+
+  const row = await db
+    .selectFrom("assessment_attempts")
+    .selectAll()
+    .where("id", "=", attempt.id)
+    .executeTakeFirstOrThrow();
+
+  if (!claimed && row.status !== "submitted") {
+    throw new HttpError(409, "ATTEMPT_EXPIRED", "This attempt can no longer be submitted.");
+  }
+
+  return {
+    attempt: toSubmitDto(row, parseConfig(row.config)),
+    results: await loadAttemptReview(db, attempt.id),
   };
 }
 
